@@ -1,0 +1,501 @@
+<!DOCTYPE html><html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>محرر Pixel — هاتف + كمبيوتر</title>
+<style>
+:root{--bg:#0f1724;--panel:#0b1220;--accent:#06b6d4;--muted:#94a3b8}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter, Noto Sans Arabic, system-ui, sans-serif;background:var(--bg);color:#e6eef6}
+.app{display:flex;flex-direction:column;height:100vh}
+.header{display:flex;gap:8px;align-items:center;padding:8px;background:linear-gradient(90deg,#071021, #071827);border-bottom:1px solid rgba(255,255,255,0.03)}
+.title{font-weight:600;font-size:16px}
+.controls{display:flex;gap:8px;align-items:center;margin-left:auto}
+.btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 10px;border-radius:8px;color:inherit}
+.toolbar{display:flex;gap:6px;padding:8px;background:var(--panel);overflow:auto}
+.toolbar .tool{min-width:44px;min-height:44px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center}
+.layout{display:flex;flex:1;gap:10px;padding:10px;overflow:hidden}
+.left{width:300px;max-width:40%;display:flex;flex-direction:column;gap:10px}
+.right{flex:1;display:flex;flex-direction:column;gap:10px}
+.panel{background:#071022;padding:10px;border-radius:10px;min-height:40px}
+.canvas-wrap{flex:1;display:flex;justify-content:center;align-items:center;background:#06121a;border-radius:10px}
+.stage{position:relative}
+canvas{image-rendering:pixelated;border:1px solid rgba(255,255,255,0.03);background:transparent;display:block}
+.layers-list, .frames-list{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow:auto}
+.layer-item, .frame-item{display:flex;gap:8px;align-items:center;padding:6px;border-radius:8px;background:rgba(255,255,255,0.02)}
+.frame-thumb{width:56px;height:56px;border:1px solid rgba(255,255,255,0.04);image-rendering:pixelated}
+.row{display:flex;gap:8px;align-items:center}
+.small{font-size:13px;color:var(--muted)}
+.footer{padding:8px;text-align:center;color:var(--muted);font-size:13px}
+/* responsive */
+@media (max-width:900px){.layout{flex-direction:column}.left{width:100%;max-width:none}.toolbar{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="title">محرر Pixel — مناسب للهاتف والكمبيوتر</div>
+    <div class="controls">
+      <button id="newBtn" class="btn">مشروع جديد</button>
+      <button id="saveBtn" class="btn">📂 حفظ</button>
+      <button id="loadBtn" class="btn">📥 تحميل</button>
+      <button id="exportPNG" class="btn">💾 تصدير PNG</button>
+      <button id="exportSprite" class="btn">🖼️ Spritesheet</button>
+      <button id="exportFramesZip" class="btn">🗜️ تنزيل إطارات</button>
+    </div>
+  </div>  <div class="toolbar" role="toolbar" aria-label="أدوات الرسم">
+    <div class="tool btn" data-tool="pen">✏️</div>
+    <div class="tool btn" data-tool="eraser">🧽</div>
+    <div class="tool btn" data-tool="fill">🪣</div>
+    <div class="tool btn" data-tool="picker">🎯</div>
+    <div class="tool btn" data-tool="line">📏</div>
+    <div class="tool btn" data-tool="rect">▭</div>
+    <div class="tool btn" data-tool="circle">◯</div>
+    <div class="tool btn" data-tool="move">🔀</div>
+    <input type="color" id="colorPicker" style="margin-left:8px" value="#ff6b6b" />
+    <label class="small">حجم العرض
+      <select id="previewScale" class="btn">
+        <option value="8">8x</option>
+        <option value="10">10x</option>
+        <option value="16">16x</option>
+      </select>
+    </label>
+    <label class="small">حجم الفرشاة
+      <input id="brushSize" type="number" min="1" max="8" value="1" style="width:64px" />
+    </label>
+  </div>  <div class="layout">
+    <div class="left">
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>إعدادات اللوحة</strong></div>
+          <div class="small">تعديل الأبعاد</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+          <label class="small">العرض<input id="inputW" type="number" min="4" value="32" class="btn" style="width:80px"/></label>
+          <label class="small">الارتفاع<input id="inputH" type="number" min="4" value="32" class="btn" style="width:80px"/></label>
+          <button id="resizeBtn" class="btn">تغيير</button>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <button id="addLayerBtn" class="btn">➕ طبقة</button>
+          <button id="removeLayerBtn" class="btn">🗑️ حذف طبقة</button>
+          <button id="addFrameBtn" class="btn">➕ إطار</button>
+          <button id="removeFrameBtn" class="btn">🗑️ حذف إطار</button>
+        </div>
+      </div><div class="panel">
+    <strong>الطبقات</strong>
+    <div id="layers" class="layers-list"></div>
+  </div>
+
+  <div class="panel">
+    <strong>الإطارات (الأنيميشن)</strong>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <button id="playBtn" class="btn">▶️ تشغيل</button>
+      <button id="stopBtn" class="btn">⏸️ إيقاف</button>
+      <label class="small">FPS<input id="fps" type="number" value="8" min="1" max="60" class="btn" style="width:72px"/></label>
+    </div>
+    <div id="frames" class="frames-list"></div>
+  </div>
+</div>
+
+<div class="right">
+  <div class="panel canvas-wrap">
+    <div class="stage" id="stage">
+      <!-- canvases layers will be added here -->
+    </div>
+  </div>
+
+  <div class="panel" style="display:flex;gap:10px;align-items:center;justify-content:space-between">
+    <div class="small">أداة: <span id="activeTool">قلم</span></div>
+    <div class="small">اللون: <span id="colorLabel">#ff6b6b</span></div>
+    <div class="small">مقياس العرض: <span id="scaleLabel">8x</span></div>
+  </div>
+</div>
+
+  </div>  <div class="footer">محرر مخصّص للألعاب — حفظ، تحميل، Spritesheet، إطارات قابلة للتحميل. يعمل على الهاتف والكمبيوتر.</div>
+</div><input type="file" id="fileInput" accept=".json" style="display:none" /><script>
+/* ======= بيانات الحالة ======= */
+let W = 32, H = 32;
+let scale = parseInt(document.getElementById('previewScale').value);
+let brush = parseInt(document.getElementById('brushSize').value);
+let color = document.getElementById('colorPicker').value;
+let tool = 'pen';
+let layers = []; // كل طبقة هي canvas element of size W x H (logical pixels)
+let frames = []; // كل فريم هو array of layers' imageData (typed arrays)
+let activeLayer = 0;
+let activeFrame = 0;
+let playing = false;
+let playInterval = null;
+
+const stage = document.getElementById('stage');
+const layersDiv = document.getElementById('layers');
+const framesDiv = document.getElementById('frames');
+const activeToolLabel = document.getElementById('activeTool');
+const colorLabel = document.getElementById('colorLabel');
+const scaleLabel = document.getElementById('scaleLabel');
+
+/* ======= مساعد لإنشاء طبقة (canvas) ======= */
+function createLayerCanvas(){
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  c.style.position = 'absolute';
+  c.style.left = '0'; c.style.top='0';
+  c.style.width = (W*scale)+'px'; c.style.height = (H*scale)+'px';
+  c.getContext('2d').imageSmoothingEnabled = false;
+  return c;
+}
+
+/* ======= إعادة البناء (load frame into stage) ======= */
+function renderStage(){
+  // نظف الـ stage
+  stage.innerHTML = '';
+  // لكل طبقة: أضف canvas مرئي ومقاس كبير
+  const frame = frames[activeFrame];
+  layers = [];
+  frame.forEach((imgArr, idx)=>{
+    const c = createLayerCanvas();
+    const ctx = c.getContext('2d');
+    const img = ctx.createImageData(W,H);
+    img.data.set(imgArr);
+    ctx.putImageData(img,0,0);
+    c.dataset.layer = idx;
+    c.style.zIndex = idx;
+    stage.appendChild(c);
+    layers.push(c);
+  });
+  // اضبط حجم الحاوية
+  stage.style.width = (W*scale) + 'px';
+  stage.style.height = (H*scale) + 'px';
+  updateUILists();
+}
+
+/* ======= إنشاء مشروع جديد ======= */
+function newProject(w=32,h=32){
+  W=w; H=h; activeLayer=0; activeFrame=0; frames=[];
+  const blankLayer = new Uint8ClampedArray(W*H*4);
+  // اجعل الخلفية شفافاً (alpha=0)
+  for(let i=0;i<blankLayer.length;i+=4) blankLayer[i+3]=0;
+  // إطار واحد مع طبقة واحدة
+  frames.push([blankLayer.slice()]);
+  renderStage();
+}
+
+/* ======= أدوات الرسم الأساسية ======= */
+function putPixelOnLayer(layerIdx,x,y,rgba){
+  if(x<0||y<0||x>=W||y>=H) return;
+  const arr = frames[activeFrame][layerIdx];
+  const idx = (y*W + x)*4;
+  arr[idx]=rgba[0]; arr[idx+1]=rgba[1]; arr[idx+2]=rgba[2]; arr[idx+3]=rgba[3];
+  // حدث الكانفاس المرئي
+  const c = layers[layerIdx];
+  const ctx = c.getContext('2d');
+  ctx.putImageData(new ImageData(arr, W, H), 0, 0);
+}
+function hexToRgbaArray(hex){
+  const v = hex.replace('#','');
+  const r = parseInt(v.substring(0,2),16);
+  const g = parseInt(v.substring(2,4),16);
+  const b = parseInt(v.substring(4,6),16);
+  return [r,g,b,255];
+}
+
+/* ======= فرش متعددة وادوات: line, rect, circle, fill, move, picker ======= */
+function drawLine(layerIdx,x0,y0,x1,y1,rgba){
+  // Bresenham
+  x0=Math.floor(x0);y0=Math.floor(y0);x1=Math.floor(x1);y1=Math.floor(y1);
+  const dx = Math.abs(x1-x0), sx = x0<x1?1:-1;
+  const dy = -Math.abs(y1-y0), sy = y0<y1?1:-1;
+  let err = dx+dy;
+  while(true){ putPixelOnLayer(layerIdx,x0,y0,rgba); if(x0===x1 && y0===y1) break; let e2 = 2*err; if(e2>=dy){ err+=dy; x0+=sx; } if(e2<=dx){ err+=dx; y0+=sy; } }
+}
+function drawRect(layerIdx,x,y,w,h,rgba,fill=false){
+  if(fill){ for(let yy=y; yy<y+h; yy++) for(let xx=x; xx<x+w; xx++) putPixelOnLayer(layerIdx,xx,yy,rgba); }
+  else{ drawLine(layerIdx,x,y,x+w-1,y,rgba); drawLine(layerIdx,x,y,x,y+h-1,rgba); drawLine(layerIdx,x+w-1,y,x+w-1,y+h-1,rgba); drawLine(layerIdx,x,y+h-1,x+w-1,y+h-1,rgba); }
+}
+function drawCircle(layerIdx, cx,cy, r, rgba, fill=false){
+  cx=Math.floor(cx); cy=Math.floor(cy); r=Math.abs(Math.floor(r));
+  let x = r, y = 0, err = 0;
+  while (x >= y) {
+    const pts = [[cx + x, cy + y],[cx + y, cy + x],[cx - y, cy + x],[cx - x, cy + y],[cx - x, cy - y],[cx - y, cy - x],[cx + y, cy - x],[cx + x, cy - y]];
+    pts.forEach(p=> putPixelOnLayer(layerIdx,p[0],p[1],rgba));
+    y += 1;
+    if (err <= 0) { err += 2*y + 1; }
+    if (err > 0) { x -= 1; err -= 2*x + 1; }
+    if(fill){ for(let yy=cy-r; yy<=cy+r; yy++) for(let xx=cx-r; xx<=cx+r; xx++) if((xx-cx)*(xx-cx)+(yy-cy)*(yy-cy) <= r*r) putPixelOnLayer(layerIdx,xx,yy,rgba); }
+  }
+}
+
+function floodFill(layerIdx, sx, sy, newColor){
+  const arr = frames[activeFrame][layerIdx];
+  const W4 = W*4;
+  const getIdx = (x,y)=> (y*W + x)*4;
+  if(sx<0||sy<0||sx>=W||sy>=H) return;
+  const startIdx = getIdx(sx,sy);
+  const target = [arr[startIdx],arr[startIdx+1],arr[startIdx+2],arr[startIdx+3]];
+  if(target[0]===newColor[0] && target[1]===newColor[1] && target[2]===newColor[2] && target[3]===newColor[3]) return;
+  const stack = [[sx,sy]];
+  while(stack.length){
+    const [x,y] = stack.pop();
+    if(x<0||y<0||x>=W||y>=H) continue;
+    const idx = getIdx(x,y);
+    if(arr[idx]===target[0] && arr[idx+1]===target[1] && arr[idx+2]===target[2] && arr[idx+3]===target[3]){
+      arr[idx]=newColor[0]; arr[idx+1]=newColor[1]; arr[idx+2]=newColor[2]; arr[idx+3]=newColor[3];
+      stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
+    }
+  }
+  // redraw layer canvas
+  const c = layers[layerIdx];
+  c.getContext('2d').putImageData(new ImageData(arr,W,H),0,0);
+}
+
+/* ======= أدوات التفاعل (pointer) ======= */
+let pointerDown = false; let startX=0,startY=0; let lastX=0,lastY=0; let moving=false; let moveBuffer=null;
+
+function canvasPointerToGrid(e){
+  const rect = stage.getBoundingClientRect();
+  const px = e.clientX - rect.left; const py = e.clientY - rect.top;
+  const gx = Math.floor(px/scale); const gy = Math.floor(py/scale);
+  return [gx,gy];
+}
+
+stage.addEventListener('pointerdown', (ev)=>{
+  ev.preventDefault(); pointerDown=true; const [gx,gy]=canvasPointerToGrid(ev); startX=gx; startY=gy; lastX=gx; lastY=gy;
+  if(tool==='pen'){ const rgba = hexToRgbaArray(color); for(let ix=0;ix<brush;ix++) for(let iy=0;iy<brush;iy++) putPixelOnLayer(activeLayer, gx+ix, gy+iy, rgba); }
+  else if(tool==='eraser'){ const rgba=[0,0,0,0]; for(let ix=0;ix<brush;ix++) for(let iy=0;iy<brush;iy++) putPixelOnLayer(activeLayer,gx+ix,gy+iy,rgba);} 
+  else if(tool==='fill') floodFill(activeLayer,gx,gy,hexToRgbaArray(color));
+  else if(tool==='picker'){ // read merged pixel at point
+    const merged = mergeVisibleLayers(); const idx=(gy*W+gx)*4; const r=merged[idx],g=merged[idx+1],b=merged[idx+2],a=merged[idx+3]; if(a===0){ /* transparent */ } else { color = rgbToHex(r,g,b); document.getElementById('colorPicker').value = color; colorLabel.textContent = color; }
+  }
+  else if(tool==='move'){
+    // create buffer of active layer to move
+    const arr = frames[activeFrame][activeLayer]; moveBuffer = new Uint8ClampedArray(arr); moving=true; }
+});
+
+stage.addEventListener('pointermove', (ev)=>{
+  if(!pointerDown) return; const [gx,gy]=canvasPointerToGrid(ev);
+  if(tool==='pen'){ const rgba = hexToRgbaArray(color); drawLine(activeLayer,lastX,lastY,gx,gy,rgba); }
+  else if(tool==='eraser'){ const rgba=[0,0,0,0]; drawLine(activeLayer,lastX,lastY,gx,gy,rgba); }
+  else if(tool==='line' || tool==='rect' || tool==='circle'){
+    // preview: re-render stage from frame but draw overlay on top using an overlay canvas
+    renderStage(); createOverlayPreview(tool, startX, startY, gx, gy);
+  }
+  else if(tool==='move' && moving){
+    // shift buffer by dx,dy and place into layer
+    const dx = gx - startX, dy = gy - startY;
+    const arr = frames[activeFrame][activeLayer];
+    // clear arr
+    for(let i=0;i<arr.length;i+=4) arr[i+3]=0;
+    for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+      const sx = x - dx, sy = y - dy;
+      if(sx>=0 && sy>=0 && sx<W && sy<H){ const sidx=(sy*W+sx)*4; const didx=(y*W+x)*4; arr[didx]=moveBuffer[sidx]; arr[didx+1]=moveBuffer[sidx+1]; arr[didx+2]=moveBuffer[sidx+2]; arr[didx+3]=moveBuffer[sidx+3]; }
+    }
+    layers[activeLayer].getContext('2d').putImageData(new ImageData(arr,W,H),0,0);
+  }
+  lastX=gx; lastY=gy;
+});
+
+stage.addEventListener('pointerup', (ev)=>{
+  pointerDown=false; moving=false; moveBuffer=null; // finalize shapes
+  const [gx,gy]=canvasPointerToGrid(ev);
+  if(tool==='line'){ drawLine(activeLayer,startX,startY,gx,gy,hexToRgbaArray(color)); }
+  else if(tool==='rect'){ const x=Math.min(startX,gx); const y=Math.min(startY,gy); const w=Math.abs(gx-startX)+1; const h=Math.abs(gy-startY)+1; drawRect(activeLayer,x,y,w,h,hexToRgbaArray(color), false); }
+  else if(tool==='circle'){ const dx=gx-startX, dy=gy-startY; const r=Math.round(Math.sqrt(dx*dx+dy*dy)); drawCircle(activeLayer,startX,startY,r,hexToRgbaArray(color), false); }
+});
+
+/* ======= معاينات (overlay) للأشكال أثناء السحب ======= */
+function createOverlayPreview(toolName,x0,y0,x1,y1){
+  const overlay = document.createElement('canvas'); overlay.width=W; overlay.height=H; overlay.style.position='absolute'; overlay.style.left='0'; overlay.style.top='0'; overlay.style.zIndex = 9999; overlay.style.width=(W*scale)+'px'; overlay.style.height=(H*scale)+'px'; overlay.getContext('2d').imageSmoothingEnabled = false;
+  const octx = overlay.getContext('2d');
+  octx.clearRect(0,0,W,H);
+  const rgba = hexToRgbaArray(color);
+  if(toolName==='line'){ // draw preview line
+    drawLinePreview(octx,x0,y0,x1,y1,rgba);
+  } else if(toolName==='rect'){
+    const x=Math.min(x0,x1), y=Math.min(y0,y1), w=Math.abs(x1-x0)+1, h=Math.abs(y1-y0)+1;
+    // stroke
+    drawRectPreview(octx,x,y,w,h,rgba);
+  } else if(toolName==='circle'){
+    const dx=x1-x0, dy=y1-y0, r=Math.round(Math.sqrt(dx*dx+dy*dy));
+    drawCirclePreview(octx,x0,y0,r,rgba);
+  }
+  stage.appendChild(overlay);
+}
+function drawLinePreview(octx,x0,y0,x1,y1,rgba){ // very light overlay
+  const img = octx.getImageData(0,0,W,H);
+  // use same bresenham to set pixels with alpha 200
+  x0=Math.floor(x0);y0=Math.floor(y0);x1=Math.floor(x1);y1=Math.floor(y1);
+  const dx = Math.abs(x1-x0), sx = x0<x1?1:-1; const dy = -Math.abs(y1-y0), sy = y0<y1?1:-1; let err=dx+dy;
+  while(true){ const idx=(y0*W+x0)*4; img.data[idx]=rgba[0]; img.data[idx+1]=rgba[1]; img.data[idx+2]=rgba[2]; img.data[idx+3]=180; if(x0===x1 && y0===y1) break; let e2=2*err; if(e2>=dy){ err+=dy; x0+=sx; } if(e2<=dx){ err+=dx; y0+=sy; } }
+  octx.putImageData(img,0,0);
+}
+function drawRectPreview(octx,x,y,w,h,rgba){ const img=octx.getImageData(0,0,W,H); for(let i=0;i<w;i++){ let idx=(y*W + (x+i))*4; img.data[idx]=rgba[0];img.data[idx+1]=rgba[1];img.data[idx+2]=rgba[2];img.data[idx+3]=160; idx=((y+h-1)*W + (x+i))*4; img.data[idx]=rgba[0];img.data[idx+1]=rgba[1];img.data[idx+2]=rgba[2];img.data[idx+3]=160; } for(let j=0;j<h;j++){ let idx=( (y+j)*W + x)*4; img.data[idx]=rgba[0];img.data[idx+1]=rgba[1];img.data[idx+2]=rgba[2];img.data[idx+3]=160; idx=( (y+j)*W + (x+w-1))*4; img.data[idx]=rgba[0];img.data[idx+1]=rgba[1];img.data[idx+2]=rgba[2];img.data[idx+3]=160; } octx.putImageData(img,0,0); }
+function drawCirclePreview(octx,cx,cy,r,rgba){ const img=octx.getImageData(0,0,W,H); for(let y=cy-r;y<=cy+r;y++){ for(let x=cx-r;x<=cx+r;x++){ if(x>=0 && y>=0 && x<W && y<H){ if((x-cx)*(x-cx)+(y-cy)*(y-cy) <= r*r){ const idx=(y*W+x)*4; img.data[idx]=rgba[0];img.data[idx+1]=rgba[1];img.data[idx+2]=rgba[2];img.data[idx+3]=140; } } } } octx.putImageData(img,0,0); }
+
+/* ======= دمج الطبقات للحصول على بكسل واحد (للـ picker) ======= */
+function mergeVisibleLayers(){
+  // هنا كل الطبقات مرئية دائماً — ندمج ببساطة من الأسفل للأعلى
+  const out = new Uint8ClampedArray(W*H*4);
+  for(let i=0;i<W*H*4;i+=4){ out[i]=0; out[i+1]=0; out[i+2]=0; out[i+3]=0; }
+  const frame = frames[activeFrame];
+  frame.forEach(layerArr=>{
+    for(let i=0;i<layerArr.length;i+=4){ const a = layerArr[i+3]/255; if(a===0) continue; // شفاف
+      // alpha compositing over
+      const dstIdx = i;
+      const sr = layerArr[i], sg=layerArr[i+1], sb=layerArr[i+2], sa=layerArr[i+3]/255;
+      const dr = out[dstIdx], dg = out[dstIdx+1], db = out[dstIdx+2], da = out[dstIdx+3]/255;
+      const outA = sa + da*(1-sa);
+      if(outA>0){ out[dstIdx] = Math.round((sr*sa + dr*da*(1-sa))/outA); out[dstIdx+1] = Math.round((sg*sa + dg*da*(1-sa))/outA); out[dstIdx+2] = Math.round((sb*sa + db*da*(1-sa))/outA); out[dstIdx+3] = Math.round(outA*255); }
+    }
+  });
+  return out;
+}
+
+/* ======= قائمة الطبقات والإطارات في الـ UI ======= */
+function updateUILists(){
+  // Layers
+  layersDiv.innerHTML='';
+  layers.forEach((c,idx)=>{
+    const item = document.createElement('div'); item.className='layer-item';
+    item.innerHTML = `<div style="flex:1">طبقة ${idx+1}</div><div style='display:flex;gap:6px'><button data-idx='${idx}' class='btn selLayer'>تحديد</button><button data-idx='${idx}' class='btn delLayer'>حذف</button></div>`;
+    layersDiv.appendChild(item);
+  });
+  layersDiv.querySelectorAll('.selLayer').forEach(b=>b.onclick = e=> { activeLayer = parseInt(e.target.dataset.idx); highlightActive(); });
+  layersDiv.querySelectorAll('.delLayer').forEach(b=>b.onclick = e=> { const idx=parseInt(e.target.dataset.idx); if(frames[activeFrame].length<=1) return alert('لا يمكن حذف آخر طبقة'); frames[activeFrame].splice(idx,1); activeLayer = Math.max(0, activeLayer-1); renderStage(); });
+
+  // Frames
+  framesDiv.innerHTML='';
+  frames.forEach((frameLayers, fIdx)=>{
+    const item = document.createElement('div'); item.className='frame-item';
+    const thumb = document.createElement('canvas'); thumb.width=W; thumb.height=H; thumb.className='frame-thumb'; const tctx = thumb.getContext('2d'); tctx.imageSmoothingEnabled=false; // دمج طبقات الفريم للرسم
+    const tmp = tctx.createImageData(W,H);
+    const merged = new Uint8ClampedArray(W*H*4);
+    frameLayers.forEach(layerArr=>{ for(let i=0;i<layerArr.length;i+=4){ const a = layerArr[i+3]/255; if(a===0) continue; merged[i]=layerArr[i]; merged[i+1]=layerArr[i+1]; merged[i+2]=layerArr[i+2]; merged[i+3]=layerArr[i+3]; }});
+    tmp.data.set(merged); tctx.putImageData(tmp,0,0);
+    item.appendChild(thumb);
+    const meta = document.createElement('div'); meta.style.display='flex'; meta.style.flexDirection='column'; meta.style.gap='6px'; meta.innerHTML = `<div>إطار ${fIdx+1}</div><div style='display:flex;gap:6px'><button data-f='${fIdx}' class='btn selFrame'>تحديد</button><button data-f='${fIdx}' class='btn delFrame'>حذف</button><button data-f='${fIdx}' class='btn dupFrame'>نسخ</button></div>`;
+    item.appendChild(meta);
+    framesDiv.appendChild(item);
+  });
+  framesDiv.querySelectorAll('.selFrame').forEach(b=>b.onclick = e=>{ activeFrame = parseInt(e.target.dataset.f); renderStage(); });
+  framesDiv.querySelectorAll('.delFrame').forEach(b=>b.onclick = e=>{ const idx=parseInt(e.target.dataset.f); if(frames.length<=1) return alert('لا يمكن حذف آخر إطار'); frames.splice(idx,1); activeFrame = Math.max(0, activeFrame-1); renderStage(); });
+  framesDiv.querySelectorAll('.dupFrame').forEach(b=>b.onclick = e=>{ const idx=parseInt(e.target.dataset.f); const copy = frames[idx].map(a=> new Uint8ClampedArray(a)); frames.splice(idx+1,0, copy ); renderStage(); });
+  highlightActive();
+}
+
+function highlightActive(){
+  // وضع حد على الطبقة النشطة
+  layers.forEach((c,idx)=> c.style.outline = idx===activeLayer ? '2px solid rgba(6,182,212,0.6)' : '');
+  // إبراز فريم
+  Array.from(framesDiv.children).forEach((el,idx)=> el.style.outline = idx===activeFrame ? '2px solid rgba(99,102,241,0.6)' : '');
+}
+
+/* ======= تعديل الحجم (resize) ======= */
+function resizeCanvas(newW,newH){
+  const oldW=W, oldH=H; const oldFrames = frames; W=newW; H=newH;
+  // إعادة تحجيم كل فريم وطبقة (نحافظ على البيانات في الركن الأعلى الأيسر)
+  frames = oldFrames.map(frameLayers => frameLayers.map(arr => {
+    const newArr = new Uint8ClampedArray(W*H*4);
+    for(let y=0;y<Math.min(oldH,H);y++) for(let x=0;x<Math.min(oldW,W);x++){
+      const sIdx=(y*oldW + x)*4; const dIdx=(y*W + x)*4;
+      newArr[dIdx]=arr[sIdx]; newArr[dIdx+1]=arr[sIdx+1]; newArr[dIdx+2]=arr[sIdx+2]; newArr[dIdx+3]=arr[sIdx+3];
+    }
+    return newArr;
+  }));
+  activeLayer = Math.min(activeLayer, frames[activeFrame].length-1);
+  renderStage();
+}
+
+/* ======= حفظ و تحميل المشروع (JSON) ======= */
+function saveProject(){
+  const project = {W,H, frames: frames.map(f => f.map(a=> Array.from(a))) };
+  const blob = new Blob([JSON.stringify(project)],{type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'pixel-project.json'; a.click();
+}
+function loadProject(file){
+  const reader = new FileReader(); reader.onload = ()=>{
+    const project = JSON.parse(reader.result);
+    W = project.W; H = project.H; frames = project.frames.map(f=> f.map(arr=> new Uint8ClampedArray(arr)));
+    activeFrame = 0; activeLayer = 0; renderStage();
+  }; reader.readAsText(file);
+}
+
+/* ======= التصدير: PNG للكانفاس الحالي ======= */
+function exportPNG(){
+  // دمج كل الطبقات لكانفاس مؤقت
+  const tmp = document.createElement('canvas'); tmp.width = W; tmp.height = H; const tctx = tmp.getContext('2d'); tctx.imageSmoothingEnabled=false;
+  const merged = mergeVisibleLayers(); tctx.putImageData(new ImageData(merged,W,H),0,0);
+  const a = document.createElement('a'); a.href = tmp.toDataURL('image/png'); a.download='pixel.png'; a.click();
+}
+
+/* ======= تصدير Spritesheet ======= */
+function exportSpritesheet(){
+  const framesCount = frames.length;
+  const tmp = document.createElement('canvas'); tmp.width = W * framesCount; tmp.height = H; const tctx = tmp.getContext('2d'); tctx.imageSmoothingEnabled=false;
+  frames.forEach((frameLayers, idx)=>{
+    // دمج كل طبقات الفريم
+    const merged = new Uint8ClampedArray(W*H*4);
+    frameLayers.forEach(layerArr=>{ for(let i=0;i<layerArr.length;i+=4){ if(layerArr[i+3]===0) continue; merged[i]=layerArr[i]; merged[i+1]=layerArr[i+1]; merged[i+2]=layerArr[i+2]; merged[i+3]=layerArr[i+3]; }});
+    tctx.putImageData(new ImageData(merged, W, H), idx*W, 0);
+  });
+  const a = document.createElement('a'); a.href = tmp.toDataURL('image/png'); a.download='spritesheet.png'; a.click();
+}
+
+/* ======= تنزيل إطارات فردية كصور داخل ZIP (بدون مكتبة خارجية نجمّع كـ روابط متعددة) ======= */
+function exportFramesAsZipLike(){
+  // نصدر كل إطار كصورة منفصلة تلقائياً (سيتم تنزيلهم واحدا تلو الآخر)
+  frames.forEach((f,idx)=>{
+    const tmp = document.createElement('canvas'); tmp.width=W; tmp.height=H; const tctx = tmp.getContext('2d'); tctx.imageSmoothingEnabled=false;
+    const merged = new Uint8ClampedArray(W*H*4);
+    f.forEach(layerArr=>{ for(let i=0;i<layerArr.length;i+=4){ if(layerArr[i+3]===0) continue; merged[i]=layerArr[i]; merged[i+1]=layerArr[i+1]; merged[i+2]=layerArr[i+2]; merged[i+3]=layerArr[i+3]; }});
+    tctx.putImageData(new ImageData(merged,W,H),0,0);
+    const a = document.createElement('a'); a.href = tmp.toDataURL('image/png'); a.download = `frame_${idx+1}.png`; a.click();
+  });
+}
+
+/* ======= تشغيل المعاينة (Animation Preview) ======= */
+function playAnimation(){
+  if(playing) return; playing=true; const fps = Math.max(1, parseInt(document.getElementById('fps').value)||8); let i=0; playInterval = setInterval(()=>{ activeFrame = i; renderStage(); i=(i+1)%frames.length; }, 1000/fps); }
+function stopAnimation(){ playing=false; clearInterval(playInterval); }
+
+/* ======= مساعدة تحويل RGB->HEX ======= */
+function componentToHex(c){ return c.toString(16).padStart(2,'0'); }
+function rgbToHex(r,g,b){ return '#'+componentToHex(r)+componentToHex(g)+componentToHex(b); }
+
+/* ======= أحداث الواجهة ======= */
+// أدوات
+document.querySelectorAll('.tool').forEach(el=> el.onclick = e=>{ tool = el.dataset.tool; activeToolLabel.textContent = ({pen:'قلم',eraser:'ممحاة',fill:'دلو',picker:'قطارة',line:'خط',rect:'مستطيل',circle:'دائرة',move:'تحريك'})[tool] || tool; });
+// لون
+document.getElementById('colorPicker').oninput = e=>{ color = e.target.value; colorLabel.textContent = color; };
+// مقياس
+document.getElementById('previewScale').onchange = e=>{ scale = parseInt(e.target.value); document.querySelectorAll('canvas').forEach(c=>{ c.style.width = (W*scale)+'px'; c.style.height = (H*scale)+'px'; }); scaleLabel.textContent = scale+'x'; };
+// فرشاة
+document.getElementById('brushSize').onchange = e=> brush = Math.max(1, parseInt(e.target.value));
+// أزرار المشروع
+document.getElementById('newBtn').onclick = ()=>{ const w = parseInt(prompt('عرض اللوحة pixels','32')) || 32; const h = parseInt(prompt('ارتفاع اللوحة pixels','32')) || 32; newProject(w,h); };
+document.getElementById('addLayerBtn').onclick = ()=>{ // أضف طبقة فارغة إلى الفريم الحالي
+  const arr = new Uint8ClampedArray(W*H*4); for(let i=0;i<arr.length;i+=4) arr[i+3]=0; frames[activeFrame].push(arr); renderStage(); };
+document.getElementById('removeLayerBtn').onclick = ()=>{ if(frames[activeFrame].length<=1) return alert('لا يمكن حذف آخر طبقة'); frames[activeFrame].splice(activeLayer,1); activeLayer = Math.max(0, activeLayer-1); renderStage(); };
+document.getElementById('addFrameBtn').onclick = ()=>{ // duplicate current frame
+  const copy = frames[activeFrame].map(arr=> new Uint8ClampedArray(arr)); frames.splice(activeFrame+1,0,copy); activeFrame = activeFrame+1; renderStage(); };
+document.getElementById('removeFrameBtn').onclick = ()=>{ if(frames.length<=1) return alert('لا يمكن حذف آخر إطار'); frames.splice(activeFrame,1); activeFrame = Math.max(0, activeFrame-1); renderStage(); };
+document.getElementById('resizeBtn').onclick = ()=>{ const w = Math.max(4, parseInt(document.getElementById('inputW').value)||32); const h = Math.max(4, parseInt(document.getElementById('inputH').value)||32); resizeCanvas(w,h); };
+
+// حفظ و تحميل
+document.getElementById('saveBtn').onclick = ()=> saveProject();
+document.getElementById('loadBtn').onclick = ()=> document.getElementById('fileInput').click();
+document.getElementById('fileInput').addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; loadProject(f); });
+
+// تصدير
+document.getElementById('exportPNG').onclick = ()=> exportPNG();
+document.getElementById('exportSprite').onclick = ()=> exportSpritesheet();
+document.getElementById('exportFramesZip').onclick = ()=> exportFramesAsZipLike();
+
+// انيميشن تشغيل
+document.getElementById('playBtn').onclick = ()=> playAnimation();
+document.getElementById('stopBtn').onclick = ()=> stopAnimation();
+
+// بدأ المشروع افتراضياً
+newProject(W,H);
+updateUILists();
+
+</script></body>
+</html>
