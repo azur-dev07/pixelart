@@ -1,501 +1,1412 @@
-<!DOCTYPE html><html lang="ar" dir="rtl">
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>محرر Pixel — هاتف + كمبيوتر</title>
+<title>محرر Pixel Pro — هاتف + كمبيوتر</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-:root{--bg:#0f1724;--panel:#0b1220;--accent:#06b6d4;--muted:#94a3b8}
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;font-family:Inter, Noto Sans Arabic, system-ui, sans-serif;background:var(--bg);color:#e6eef6}
-.app{display:flex;flex-direction:column;height:100vh}
-.header{display:flex;gap:8px;align-items:center;padding:8px;background:linear-gradient(90deg,#071021, #071827);border-bottom:1px solid rgba(255,255,255,0.03)}
-.title{font-weight:600;font-size:16px}
-.controls{display:flex;gap:8px;align-items:center;margin-left:auto}
-.btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 10px;border-radius:8px;color:inherit}
-.toolbar{display:flex;gap:6px;padding:8px;background:var(--panel);overflow:auto}
-.toolbar .tool{min-width:44px;min-height:44px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center}
-.layout{display:flex;flex:1;gap:10px;padding:10px;overflow:hidden}
-.left{width:300px;max-width:40%;display:flex;flex-direction:column;gap:10px}
-.right{flex:1;display:flex;flex-direction:column;gap:10px}
-.panel{background:#071022;padding:10px;border-radius:10px;min-height:40px}
-.canvas-wrap{flex:1;display:flex;justify-content:center;align-items:center;background:#06121a;border-radius:10px}
-.stage{position:relative}
-canvas{image-rendering:pixelated;border:1px solid rgba(255,255,255,0.03);background:transparent;display:block}
-.layers-list, .frames-list{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow:auto}
-.layer-item, .frame-item{display:flex;gap:8px;align-items:center;padding:6px;border-radius:8px;background:rgba(255,255,255,0.02)}
-.frame-thumb{width:56px;height:56px;border:1px solid rgba(255,255,255,0.04);image-rendering:pixelated}
-.row{display:flex;gap:8px;align-items:center}
-.small{font-size:13px;color:var(--muted)}
-.footer{padding:8px;text-align:center;color:var(--muted);font-size:13px}
-/* responsive */
-@media (max-width:900px){.layout{flex-direction:column}.left{width:100%;max-width:none}.toolbar{flex-wrap:wrap}}
+:root {
+  --bg: #0a0e17;
+  --panel: #0d1422;
+  --accent: #06b6d4;
+  --accent-dark: #0891b2;
+  --accent-light: #22d3ee;
+  --muted: #94a3b8;
+  --text: #e6eef6;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --toolbar-height: 60px;
+  --sidebar-width: 280px;
+}
+
+/* (نفس CSS الذي أرسلته مسبقاً - احتفظت به كما هو) */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: 'Inter', 'Noto Sans Arabic', system-ui, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+.app { display: flex; flex-direction: column; height: 100vh; }
+.header { display: flex; gap: 12px; align-items: center; padding: 10px 16px; background: linear-gradient(90deg, #071021, #091a2d); border-bottom: 1px solid rgba(255,255,255,0.05); box-shadow:0 2px 10px rgba(0,0,0,0.2); min-height:55px;}
+.logo { display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px; color:var(--accent-light); }
+.logo i { font-size:20px; }
+.controls { display:flex; gap:8px; align-items:center; margin-left:auto; flex-wrap:wrap; }
+.btn { background: rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.07); padding:8px 12px; border-radius:8px; color:inherit; cursor:pointer; display:flex; align-items:center; gap:6px; font-family:inherit; transition:all .2s ease; font-size:14px;}
+.btn:hover{ background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.1); }
+.btn:active{ transform: translateY(1px); }
+.btn-primary{ background:var(--accent); color:white; border:none; }
+.btn-primary:hover{ background:var(--accent-dark); }
+.btn-danger{ background:var(--danger); color:white; border:none;}
+.toolbar { display:flex; gap:8px; padding:10px 16px; background:var(--panel); border-bottom:1px solid rgba(255,255,255,0.05); overflow:auto; min-height:var(--toolbar-height); }
+.tool-group { display:flex; gap:4px; padding:0 8px; border-right:1px solid rgba(255,255,255,0.05); }
+.tool-group:last-child{ border-right:none; }
+.tool { min-width:44px; min-height:44px; border-radius:8px; border:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; cursor:pointer; background:rgba(255,255,255,0.03); transition:all .2s ease; font-size:18px; }
+.tool:hover{ background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
+.tool.active{ background:var(--accent); color:white; border-color:var(--accent); }
+.color-swatch { width:30px; height:30px; border-radius:6px; border:2px solid rgba(255,255,255,0.1); cursor:pointer; transition:transform .2s ease; }
+.color-swatch:hover { transform: scale(1.1); }
+.color-swatch.active { border-color:white; box-shadow:0 0 0 2px var(--accent); }
+
+.layout { display:flex; flex:1; overflow:hidden;}
+.left { width:var(--sidebar-width); display:flex; flex-direction:column; gap:12px; padding:12px; background:var(--panel); border-left:1px solid rgba(255,255,255,0.05); overflow-y:auto; }
+.right { flex:1; display:flex; flex-direction:column; gap:12px; padding:12px; overflow:hidden; }
+.panel { background:var(--panel); padding:14px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+.panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.05); }
+.panel-title { font-weight:600; font-size:15px; color:var(--accent-light); }
+.canvas-wrap { flex:1; display:flex; justify-content:center; align-items:center; background:#070e17; border-radius:12px; position:relative; overflow:hidden; }
+.stage { position:relative; }
+canvas { image-rendering: pixelated; border:1px solid rgba(255,255,255,0.05); background: transparent; display:block; position:absolute; left:0; top:0; }
+.layers-list, .frames-list { display:flex; flex-direction:column; gap:8px; max-height:220px; overflow:auto; }
+.layer-item, .frame-item { display:flex; gap:10px; align-items:center; padding:10px; border-radius:8px; background:rgba(255,255,255,0.03); transition:all .2s ease; }
+.layer-item:hover, .frame-item:hover { background: rgba(255,255,255,0.06); }
+.layer-item.active, .frame-item.active { background: rgba(6,182,212,0.15); border:1px solid var(--accent); }
+.layer-thumb { width:40px; height:40px; border:1px solid rgba(255,255,255,0.06); border-radius:6px; image-rendering: pixelated; background:#0f172a; }
+.frame-thumb { width:56px; height:56px; border:1px solid rgba(255,255,255,0.06); border-radius:8px; image-rendering: pixelated; background:#0f172a; }
+.layer-info, .frame-info { flex:1; display:flex; flex-direction:column; gap:4px; }
+.layer-name, .frame-name { font-size:14px; font-weight:500; }
+.layer-details, .frame-details { font-size:12px; color:var(--muted); }
+.layer-actions, .frame-actions { display:flex; gap:6px; }
+.action-btn { background:transparent; border:none; color:var(--muted); cursor:pointer; font-size:14px; padding:4px; border-radius:4px; transition:all .2s ease; }
+.action-btn:hover{ color:var(--text); background:rgba(255,255,255,0.05); }
+.input-group { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+.label { font-size:13px; color:var(--muted); }
+.input { background: rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.07); border-radius:6px; padding:8px 12px; color:var(--text); font-family:inherit; }
+.input:focus { outline:none; border-color:var(--accent); }
+.row { display:flex; gap:10px; align-items:center; }
+.small { font-size:13px; color:var(--muted); }
+.footer { padding:12px; text-align:center; color:var(--muted); font-size:13px; background:var(--panel); border-top:1px solid rgba(255,255,255,0.05); }
+.preview-container { position:absolute; top:10px; left:10px; z-index:100; background:rgba(0,0,0,0.7); border-radius:8px; padding:8px; backdrop-filter: blur(5px); display:flex; align-items:center; gap:8px; }
+.preview-controls { display:flex; gap:5px; }
+@media (max-width:900px){ .layout{ flex-direction:column } .left{ width:100%; max-height:40vh } .toolbar{ flex-wrap:wrap; gap:6px } .tool-group{ border-right:none; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:8px } .controls{ gap:6px } .btn span{ display:none } }
+::-webkit-scrollbar{ width:8px; height:8px }
+::-webkit-scrollbar-track{ background: rgba(255,255,255,0.02); border-radius:10px }
+::-webkit-scrollbar-thumb{ background: rgba(255,255,255,0.1); border-radius:10px }
+::-webkit-scrollbar-thumb:hover{ background: rgba(255,255,255,0.2) }
+input[type="color"]{ -webkit-appearance:none; width:40px; height:40px; border:none; border-radius:8px; background:transparent; cursor:pointer }
+input[type="color"]::-webkit-color-swatch-wrapper{ padding:0 }
+input[type="color"]::-webkit-color-swatch{ border:none; border-radius:6px }
+.color-palette{ display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin-top:10px }
+.onion-skin{ opacity:0.35; position:absolute; top:0; left:0; z-index:1; pointer-events:none }
+.selection-box{ position:absolute; border:2px dashed var(--accent); background:rgba(6,182,212,0.1); pointer-events:none }
+.context-menu{ position:absolute; background:var(--panel); border-radius:8px; box-shadow:0 5px 15px rgba(0,0,0,0.2); z-index:1000; padding:8px 0; border:1px solid rgba(255,255,255,0.1) }
+.menu-item{ padding:8px 16px; cursor:pointer; font-size:14px; transition:all .2s ease; display:flex; align-items:center; gap:8px }
+.menu-item:hover{ background: rgba(255,255,255,0.05) }
+.toast{ position:fixed; bottom:20px; right:20px; background:var(--panel); color:var(--text); padding:12px 16px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); display:flex; align-items:center; gap:10px; z-index:10000; animation: toast-in .3s ease; border-left:4px solid var(--accent) }
+.toast.success{ border-left-color:var(--success) }
+.toast.error{ border-left-color:var(--danger) }
+@keyframes toast-in { from { transform: translateY(100px); opacity:0 } to { transform: translateY(0); opacity:1 } }
+.text-center{ text-align:center } .mt-1{ margin-top:8px } .mb-1{ margin-bottom:8px } .hidden{ display:none !important } .flex-1{ flex:1 } @keyframes pulse { 0%{ opacity:0.6 } 50%{ opacity:1 } 100%{ opacity:0.6 } } .pulse{ animation:pulse 1.5s infinite }
 </style>
 </head>
 <body>
 <div class="app">
   <div class="header">
-    <div class="title">محرر Pixel — مناسب للهاتف والكمبيوتر</div>
-    <div class="controls">
-      <button id="newBtn" class="btn">مشروع جديد</button>
-      <button id="saveBtn" class="btn">📂 حفظ</button>
-      <button id="loadBtn" class="btn">📥 تحميل</button>
-      <button id="exportPNG" class="btn">💾 تصدير PNG</button>
-      <button id="exportSprite" class="btn">🖼️ Spritesheet</button>
-      <button id="exportFramesZip" class="btn">🗜️ تنزيل إطارات</button>
+    <div class="logo">
+      <i class="fas fa-paint-brush"></i>
+      <span>محرر Pixel Pro</span>
     </div>
-  </div>  <div class="toolbar" role="toolbar" aria-label="أدوات الرسم">
-    <div class="tool btn" data-tool="pen">✏️</div>
-    <div class="tool btn" data-tool="eraser">🧽</div>
-    <div class="tool btn" data-tool="fill">🪣</div>
-    <div class="tool btn" data-tool="picker">🎯</div>
-    <div class="tool btn" data-tool="line">📏</div>
-    <div class="tool btn" data-tool="rect">▭</div>
-    <div class="tool btn" data-tool="circle">◯</div>
-    <div class="tool btn" data-tool="move">🔀</div>
-    <input type="color" id="colorPicker" style="margin-left:8px" value="#ff6b6b" />
-    <label class="small">حجم العرض
-      <select id="previewScale" class="btn">
-        <option value="8">8x</option>
-        <option value="10">10x</option>
-        <option value="16">16x</option>
-      </select>
-    </label>
-    <label class="small">حجم الفرشاة
-      <input id="brushSize" type="number" min="1" max="8" value="1" style="width:64px" />
-    </label>
-  </div>  <div class="layout">
+    <div class="controls">
+      <button id="newBtn" class="btn"><i class="fas fa-plus"></i> <span>مشروع جديد</span></button>
+      <button id="saveBtn" class="btn"><i class="fas fa-save"></i> <span>حفظ</span></button>
+      <button id="exportBtn" class="btn"><i class="fas fa-file-export"></i> <span>تصدير PNG</span></button>
+      <button id="loadBtn" class="btn"><i class="fas fa-folder-open"></i> <span>تحميل</span></button>
+      <div class="divider"></div>
+      <button id="undoBtn" class="btn" title="تراجع"><i class="fas fa-undo"></i></button>
+      <button id="redoBtn" class="btn" title="إعادة"><i class="fas fa-redo"></i></button>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="tool-group">
+      <div class="tool active" data-tool="pen" title="قلم"><i class="fas fa-pencil-alt"></i></div>
+      <div class="tool" data-tool="eraser" title="ممحاة"><i class="fas fa-eraser"></i></div>
+      <div class="tool" data-tool="fill" title="دلو الطلاء"><i class="fas fa-fill-drip"></i></div>
+      <div class="tool" data-tool="picker" title="أداة انتقاء اللون"><i class="fas fa-eye-dropper"></i></div>
+    </div>
+    
+    <div class="tool-group">
+      <div class="tool" data-tool="line" title="خط"><i class="fas fa-slash"></i></div>
+      <div class="tool" data-tool="rect" title="مستطيل"><i class="far fa-square"></i></div>
+      <div class="tool" data-tool="circle" title="دائرة"><i class="far fa-circle"></i></div>
+    </div>
+    
+    <div class="tool-group">
+      <div class="tool" data-tool="select" title="أداة التحديد"><i class="fas fa-vector-square"></i></div>
+      <div class="tool" data-tool="move" title="تحريك"><i class="fas fa-arrows-alt"></i></div>
+    </div>
+    
+    <div class="tool-group">
+      <input type="color" id="colorPicker" value="#ff6b6b" title="اختر لون" />
+      <div class="color-swatch active" style="background: #ff6b6b" data-color="#ff6b6b"></div>
+      <div class="color-swatch" style="background: #06b6d4" data-color="#06b6d4"></div>
+      <div class="color-swatch" style="background: #10b981" data-color="#10b981"></div>
+      <div class="color-swatch" style="background: #f59e0b" data-color="#f59e0b"></div>
+      <div class="color-swatch" style="background: #ef4444" data-color="#ef4444"></div>
+      <div class="color-swatch" style="background: #8b5cf6" data-color="#8b5cf6"></div>
+    </div>
+    
+    <div class="tool-group">
+      <label class="small">مقياس العرض
+        <select id="previewScale" class="btn">
+          <option value="8">8x</option>
+          <option value="10">10x</option>
+          <option value="16" selected>16x</option>
+          <option value="24">24x</option>
+          <option value="32">32x</option>
+        </select>
+      </label>
+      
+      <label class="small">حجم الفرشاة
+        <input id="brushSize" type="range" min="1" max="8" value="1" style="width: 80px" />
+        <span id="brushSizeValue">1</span>
+      </label>
+    </div>
+    
+    <div class="tool-group">
+      <button id="toggleOnionSkin" class="btn" title="تفعيل/تعطيل تأثير البصل"><i class="fas fa-layer-group"></i> <span>تأثير البصل</span></button>
+      <button id="toggleGrid" class="btn" title="إظهار/إخفاء الشبكة"><i class="fas fa-th"></i> <span>الشبكة</span></button>
+    </div>
+  </div>
+
+  <div class="layout">
     <div class="left">
       <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong>إعدادات اللوحة</strong></div>
-          <div class="small">تعديل الأبعاد</div>
+        <div class="panel-header">
+          <div class="panel-title">إعدادات اللوحة</div>
         </div>
-        <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
-          <label class="small">العرض<input id="inputW" type="number" min="4" value="32" class="btn" style="width:80px"/></label>
-          <label class="small">الارتفاع<input id="inputH" type="number" min="4" value="32" class="btn" style="width:80px"/></label>
-          <button id="resizeBtn" class="btn">تغيير</button>
+        <div class="input-group">
+          <label class="label">أبعاد اللوحة</label>
+          <div class="row">
+            <input id="inputW" type="number" min="4" max="256" value="32" class="input" />
+            <span>x</span>
+            <input id="inputH" type="number" min="4" max="256" value="32" class="input" />
+            <button id="resizeBtn" class="btn btn-primary">تغيير</button>
+          </div>
         </div>
-        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-          <button id="addLayerBtn" class="btn">➕ طبقة</button>
-          <button id="removeLayerBtn" class="btn">🗑️ حذف طبقة</button>
-          <button id="addFrameBtn" class="btn">➕ إطار</button>
-          <button id="removeFrameBtn" class="btn">🗑️ حذف إطار</button>
+        
+        <div class="input-group">
+          <label class="label">الشفافية</label>
+          <input id="transparencySlider" type="range" min="0" max="100" value="100" class="input" />
         </div>
-      </div><div class="panel">
-    <strong>الطبقات</strong>
-    <div id="layers" class="layers-list"></div>
+        
+        <div class="row" style="justify-content: space-between; margin-top: 12px;">
+          <button id="addLayerBtn" class="btn"><i class="fas fa-layer-plus"></i> طبقة</button>
+          <button id="removeLayerBtn" class="btn btn-danger"><i class="fas fa-layer-minus"></i> حذف</button>
+          <button id="addFrameBtn" class="btn"><i class="fas fa-plus-square"></i> إطار</button>
+          <button id="removeFrameBtn" class="btn btn-danger"><i class="fas fa-minus-square"></i> حذف</button>
+        </div>
+      </div>
+      
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">الطبقات</div>
+          <div class="action-btn"><i class="fas fa-cog"></i></div>
+        </div>
+        <div id="layers" class="layers-list"></div>
+      </div>
+      
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">الإطارات (الأنيميشن)</div>
+          <div class="action-btn"><i class="fas fa-cog"></i></div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px;">
+          <button id="playBtn" class="btn"><i class="fas fa-play"></i> تشغيل</button>
+          <button id="stopBtn" class="btn"><i class="fas fa-stop"></i> إيقاف</button>
+          <label class="small">معدل الإطارات
+            <input id="fps" type="number" value="8" min="1" max="60" class="input" style="width:60px;" />
+          </label>
+        </div>
+        <div id="frames" class="frames-list"></div>
+      </div>
+    </div>
+    
+    <div class="right">
+      <div class="panel canvas-wrap">
+        <div class="preview-container">
+          <div class="preview-controls">
+            <button id="zoomInBtn" class="btn" title="تكبير"><i class="fas fa-search-plus"></i></button>
+            <button id="zoomOutBtn" class="btn" title="تصغير"><i class="fas fa-search-minus"></i></button>
+            <button id="centerCanvasBtn" class="btn" title="توسيط اللوحة"><i class="fas fa-expand"></i></button>
+          </div>
+          <div class="small">أداة: <span id="activeTool">قلم</span></div>
+          <div class="small">اللون: <span id="colorLabel">#ff6b6b</span></div>
+          <div class="small">المقياس: <span id="scaleLabel">16x</span></div>
+        </div>
+        
+        <div class="stage" id="stage" style="width:100%; height:100%; display:flex; justify-content:center; align-items:center;">
+          <!-- canvases الطبقات ستضاف هنا -->
+        </div>
+      </div>
+      
+      <div class="panel">
+        <div style="display:flex; gap:12px; align-items:center; justify-content:space-between;">
+          <div class="small">الإحداثيات: <span id="coordsLabel">0, 0</span></div>
+          <div class="small">الحجم: <span id="sizeLabel">32x32</span></div>
+          <div class="small">الإطار: <span id="frameLabel">1/1</span></div>
+          <div class="small">الطبقة: <span id="layerLabel">1/1</span></div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="panel">
-    <strong>الإطارات (الأنيميشن)</strong>
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-      <button id="playBtn" class="btn">▶️ تشغيل</button>
-      <button id="stopBtn" class="btn">⏸️ إيقاف</button>
-      <label class="small">FPS<input id="fps" type="number" value="8" min="1" max="60" class="btn" style="width:72px"/></label>
-    </div>
-    <div id="frames" class="frames-list"></div>
+  <div class="footer">
+    محرر Pixel Pro — أداة متقدمة لإنشاء الرسومات البكسلية والرسوم المتحركة. يدعم جميع الميزات الاحترافية.
   </div>
 </div>
 
-<div class="right">
-  <div class="panel canvas-wrap">
-    <div class="stage" id="stage">
-      <!-- canvases layers will be added here -->
-    </div>
-  </div>
+<input type="file" id="fileInput" accept=".json" style="display:none" />
+<input type="file" id="imageInput" accept=".png,.jpg,.jpeg" style="display:none" />
 
-  <div class="panel" style="display:flex;gap:10px;align-items:center;justify-content:space-between">
-    <div class="small">أداة: <span id="activeTool">قلم</span></div>
-    <div class="small">اللون: <span id="colorLabel">#ff6b6b</span></div>
-    <div class="small">مقياس العرض: <span id="scaleLabel">8x</span></div>
-  </div>
-</div>
-
-  </div>  <div class="footer">محرر مخصّص للألعاب — حفظ، تحميل، Spritesheet، إطارات قابلة للتحميل. يعمل على الهاتف والكمبيوتر.</div>
-</div><input type="file" id="fileInput" accept=".json" style="display:none" /><script>
-/* ======= بيانات الحالة ======= */
-let W = 32, H = 32;
-let scale = parseInt(document.getElementById('previewScale').value);
-let brush = parseInt(document.getElementById('brushSize').value);
-let color = document.getElementById('colorPicker').value;
-let tool = 'pen';
-let layers = []; // كل طبقة هي canvas element of size W x H (logical pixels)
-let frames = []; // كل فريم هو array of layers' imageData (typed arrays)
-let activeLayer = 0;
-let activeFrame = 0;
-let playing = false;
-let playInterval = null;
-
+<script>
+/* ---------------------------
+   بيانات الحالة الأساسية
+   --------------------------- */
 const stage = document.getElementById('stage');
-const layersDiv = document.getElementById('layers');
-const framesDiv = document.getElementById('frames');
+const inputW = document.getElementById('inputW');
+const inputH = document.getElementById('inputH');
+const resizeBtn = document.getElementById('resizeBtn');
+const brushSize = document.getElementById('brushSize');
+const brushSizeValue = document.getElementById('brushSizeValue');
+const colorPicker = document.getElementById('colorPicker');
+const coordsLabel = document.getElementById('coordsLabel');
+const sizeLabel = document.getElementById('sizeLabel');
 const activeToolLabel = document.getElementById('activeTool');
 const colorLabel = document.getElementById('colorLabel');
+const previewScale = document.getElementById('previewScale');
 const scaleLabel = document.getElementById('scaleLabel');
+const toggleGridBtn = document.getElementById('toggleGrid');
+const toggleOnionBtn = document.getElementById('toggleOnionSkin');
+const layersList = document.getElementById('layers');
+const framesList = document.getElementById('frames');
+const addLayerBtn = document.getElementById('addLayerBtn');
+const removeLayerBtn = document.getElementById('removeLayerBtn');
+const addFrameBtn = document.getElementById('addFrameBtn');
+const removeFrameBtn = document.getElementById('removeFrameBtn');
+const playBtn = document.getElementById('playBtn');
+const stopBtn = document.getElementById('stopBtn');
+const fpsInput = document.getElementById('fps');
+const newBtn = document.getElementById('newBtn');
+const saveBtn = document.getElementById('saveBtn');
+const loadBtn = document.getElementById('loadBtn');
+const fileInput = document.getElementById('fileInput');
+const exportBtn = document.getElementById('exportBtn');
+const undoBtn = document.getElementById('undoBtn');
+const redoBtn = document.getElementById('redoBtn');
+const zoomInBtn = document.getElementById('zoomInBtn');
+const zoomOutBtn = document.getElementById('zoomOutBtn');
+const centerCanvasBtn = document.getElementById('centerCanvasBtn');
+const frameLabel = document.getElementById('frameLabel');
+const layerLabel = document.getElementById('layerLabel');
 
-/* ======= مساعد لإنشاء طبقة (canvas) ======= */
-function createLayerCanvas(){
+let state = {
+  width: parseInt(inputW.value,10) || 32,
+  height: parseInt(inputH.value,10) || 32,
+  scale: parseInt(previewScale.value,10) || 16,
+  brush: parseInt(brushSize.value,10) || 1,
+  color: colorPicker.value || '#ff6b6b',
+  tool: 'pen',
+  showGrid: false,
+  onionSkin: false,
+  layers: [], // كل طبقة: {canvas, ctx, visible, name}
+  frames: [], // كل إطار: يحتوي على مصفوفة بيانات للطبقات (ImageData أو base64)
+  currentFrame: 0,
+  currentLayer: 0,
+  playing: false,
+  undoStack: [],
+  redoStack: [],
+  maxUndo: 40,
+  fps: parseInt(fpsInput.value,10) || 8
+};
+
+/* ---------------------------
+   دوال مساعدة عامة
+   --------------------------- */
+function createLayerCanvas(name) {
   const c = document.createElement('canvas');
-  c.width = W; c.height = H;
+  c.width = state.width;
+  c.height = state.height;
+  c.style.width = (state.width * state.scale) + 'px';
+  c.style.height = (state.height * state.scale) + 'px';
+  c.className = 'layer-canvas';
+  c.style.zIndex = (state.layers.length + 1);
   c.style.position = 'absolute';
-  c.style.left = '0'; c.style.top='0';
-  c.style.width = (W*scale)+'px'; c.style.height = (H*scale)+'px';
-  c.getContext('2d').imageSmoothingEnabled = false;
-  return c;
-}
-
-/* ======= إعادة البناء (load frame into stage) ======= */
-function renderStage(){
-  // نظف الـ stage
-  stage.innerHTML = '';
-  // لكل طبقة: أضف canvas مرئي ومقاس كبير
-  const frame = frames[activeFrame];
-  layers = [];
-  frame.forEach((imgArr, idx)=>{
-    const c = createLayerCanvas();
-    const ctx = c.getContext('2d');
-    const img = ctx.createImageData(W,H);
-    img.data.set(imgArr);
-    ctx.putImageData(img,0,0);
-    c.dataset.layer = idx;
-    c.style.zIndex = idx;
-    stage.appendChild(c);
-    layers.push(c);
-  });
-  // اضبط حجم الحاوية
-  stage.style.width = (W*scale) + 'px';
-  stage.style.height = (H*scale) + 'px';
-  updateUILists();
-}
-
-/* ======= إنشاء مشروع جديد ======= */
-function newProject(w=32,h=32){
-  W=w; H=h; activeLayer=0; activeFrame=0; frames=[];
-  const blankLayer = new Uint8ClampedArray(W*H*4);
-  // اجعل الخلفية شفافاً (alpha=0)
-  for(let i=0;i<blankLayer.length;i+=4) blankLayer[i+3]=0;
-  // إطار واحد مع طبقة واحدة
-  frames.push([blankLayer.slice()]);
-  renderStage();
-}
-
-/* ======= أدوات الرسم الأساسية ======= */
-function putPixelOnLayer(layerIdx,x,y,rgba){
-  if(x<0||y<0||x>=W||y>=H) return;
-  const arr = frames[activeFrame][layerIdx];
-  const idx = (y*W + x)*4;
-  arr[idx]=rgba[0]; arr[idx+1]=rgba[1]; arr[idx+2]=rgba[2]; arr[idx+3]=rgba[3];
-  // حدث الكانفاس المرئي
-  const c = layers[layerIdx];
+  c.style.left = '0';
+  c.style.top = '0';
+  c.style.imageRendering = 'pixelated';
+  c.style.transformOrigin = '0 0';
   const ctx = c.getContext('2d');
-  ctx.putImageData(new ImageData(arr, W, H), 0, 0);
-}
-function hexToRgbaArray(hex){
-  const v = hex.replace('#','');
-  const r = parseInt(v.substring(0,2),16);
-  const g = parseInt(v.substring(2,4),16);
-  const b = parseInt(v.substring(4,6),16);
-  return [r,g,b,255];
+  // افتراضاً شفافة
+  return { canvas: c, ctx, visible: true, name: name || `Layer ${state.layers.length+1}` };
 }
 
-/* ======= فرش متعددة وادوات: line, rect, circle, fill, move, picker ======= */
-function drawLine(layerIdx,x0,y0,x1,y1,rgba){
-  // Bresenham
-  x0=Math.floor(x0);y0=Math.floor(y0);x1=Math.floor(x1);y1=Math.floor(y1);
-  const dx = Math.abs(x1-x0), sx = x0<x1?1:-1;
-  const dy = -Math.abs(y1-y0), sy = y0<y1?1:-1;
-  let err = dx+dy;
-  while(true){ putPixelOnLayer(layerIdx,x0,y0,rgba); if(x0===x1 && y0===y1) break; let e2 = 2*err; if(e2>=dy){ err+=dy; x0+=sx; } if(e2<=dx){ err+=dx; y0+=sy; } }
+function clearStageElements() {
+  while (stage.firstChild) stage.removeChild(stage.firstChild);
 }
-function drawRect(layerIdx,x,y,w,h,rgba,fill=false){
-  if(fill){ for(let yy=y; yy<y+h; yy++) for(let xx=x; xx<x+w; xx++) putPixelOnLayer(layerIdx,xx,yy,rgba); }
-  else{ drawLine(layerIdx,x,y,x+w-1,y,rgba); drawLine(layerIdx,x,y,x,y+h-1,rgba); drawLine(layerIdx,x+w-1,y,x+w-1,y+h-1,rgba); drawLine(layerIdx,x,y+h-1,x+w-1,y+h-1,rgba); }
+
+/* إعادة رسم كل الطبقات حسب ترتيب state.layers */
+function refreshStageDom() {
+  clearStageElements();
+  // عنصر خلفية يظهر منطقة العمل (لمركزية)
+  const wrapper = document.createElement('div');
+  wrapper.style.position = 'relative';
+  wrapper.style.width = (state.width * state.scale) + 'px';
+  wrapper.style.height = (state.height * state.scale) + 'px';
+  wrapper.style.display = 'inline-block';
+  wrapper.style.userSelect = 'none';
+  wrapper.style.touchAction = 'none';
+  // إضافة عنصر الشبكة إذا كان مفعل
+  if (state.showGrid) {
+    // سنرسم الشبكة في عنصر قماش منفصل أعلى الخلفية وأدنى الطبقات
+    const grid = document.createElement('canvas');
+    grid.width = state.width;
+    grid.height = state.height;
+    grid.style.width = (state.width * state.scale) + 'px';
+    grid.style.height = (state.height * state.scale) + 'px';
+    grid.style.position = 'absolute';
+    grid.style.left = '0';
+    grid.style.top = '0';
+    grid.style.zIndex = 9999;
+    grid.style.pointerEvents = 'none';
+    grid.getContext('2d').imageSmoothingEnabled = false;
+    drawGridToCanvas(grid);
+    wrapper.appendChild(grid);
+  }
+
+  // لو كانت تأثير البصل مفعل: نستخدم canvas إضافي لرسم إطار سابق/لاحق
+  if (state.onionSkin && state.frames.length > 1) {
+    const onion = document.createElement('canvas');
+    onion.width = state.width;
+    onion.height = state.height;
+    onion.style.width = (state.width * state.scale) + 'px';
+    onion.style.height = (state.height * state.scale) + 'px';
+    onion.style.position = 'absolute';
+    onion.style.left = '0';
+    onion.style.top = '0';
+    onion.style.zIndex = 1000;
+    onion.style.pointerEvents = 'none';
+    onion.style.opacity = '0.35';
+    // رسم الإطار السابق (إن وجد)
+    const octx = onion.getContext('2d');
+    octx.imageSmoothingEnabled = false;
+    const prevIndex = Math.max(0, state.currentFrame - 1);
+    const prevFrame = state.frames[prevIndex];
+    if (prevFrame) {
+      // prevFrame.layersData هو array of base64 PNG or ImageData
+      compositeFrameToContext(prevFrame, octx);
+    }
+    wrapper.appendChild(onion);
+  }
+
+  // الآن نضيف طبقات المشروع
+  state.layers.forEach((layerObj, idx) => {
+    const c = layerObj.canvas;
+    c.width = state.width;
+    c.height = state.height;
+    c.style.width = (state.width * state.scale) + 'px';
+    c.style.height = (state.height * state.scale) + 'px';
+    c.style.zIndex = idx + 2000;
+    c.style.visibility = layerObj.visible ? 'visible' : 'hidden';
+    c.getContext('2d').imageSmoothingEnabled = false;
+    wrapper.appendChild(c);
+  });
+
+  stage.appendChild(wrapper);
+  updateLabels();
 }
-function drawCircle(layerIdx, cx,cy, r, rgba, fill=false){
-  cx=Math.floor(cx); cy=Math.floor(cy); r=Math.abs(Math.floor(r));
-  let x = r, y = 0, err = 0;
-  while (x >= y) {
-    const pts = [[cx + x, cy + y],[cx + y, cy + x],[cx - y, cy + x],[cx - x, cy + y],[cx - x, cy - y],[cx - y, cy - x],[cx + y, cy - x],[cx + x, cy - y]];
-    pts.forEach(p=> putPixelOnLayer(layerIdx,p[0],p[1],rgba));
-    y += 1;
-    if (err <= 0) { err += 2*y + 1; }
-    if (err > 0) { x -= 1; err -= 2*x + 1; }
-    if(fill){ for(let yy=cy-r; yy<=cy+r; yy++) for(let xx=cx-r; xx<=cx+r; xx++) if((xx-cx)*(xx-cx)+(yy-cy)*(yy-cy) <= r*r) putPixelOnLayer(layerIdx,xx,yy,rgba); }
+
+/* رسم الشبكة على كانفاس */
+function drawGridToCanvas(gridCanvas) {
+  const gctx = gridCanvas.getContext('2d');
+  gctx.clearRect(0,0,gridCanvas.width,gridCanvas.height);
+  gctx.fillStyle = 'rgba(0,0,0,0)'; // شفافة
+  gctx.fillRect(0,0,gridCanvas.width,gridCanvas.height);
+  gctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  gctx.lineWidth = 1 / state.scale;
+  for (let x=0;x<=gridCanvas.width;x++){
+    gctx.beginPath();
+    gctx.moveTo(x + 0.5, 0);
+    gctx.lineTo(x + 0.5, gridCanvas.height);
+    gctx.stroke();
+  }
+  for (let y=0;y<=gridCanvas.height;y++){
+    gctx.beginPath();
+    gctx.moveTo(0, y + 0.5);
+    gctx.lineTo(gridCanvas.width, y + 0.5);
+    gctx.stroke();
   }
 }
 
-function floodFill(layerIdx, sx, sy, newColor){
-  const arr = frames[activeFrame][layerIdx];
-  const W4 = W*4;
-  const getIdx = (x,y)=> (y*W + x)*4;
-  if(sx<0||sy<0||sx>=W||sy>=H) return;
-  const startIdx = getIdx(sx,sy);
-  const target = [arr[startIdx],arr[startIdx+1],arr[startIdx+2],arr[startIdx+3]];
-  if(target[0]===newColor[0] && target[1]===newColor[1] && target[2]===newColor[2] && target[3]===newColor[3]) return;
-  const stack = [[sx,sy]];
-  while(stack.length){
-    const [x,y] = stack.pop();
-    if(x<0||y<0||x>=W||y>=H) continue;
-    const idx = getIdx(x,y);
-    if(arr[idx]===target[0] && arr[idx+1]===target[1] && arr[idx+2]===target[2] && arr[idx+3]===target[3]){
-      arr[idx]=newColor[0]; arr[idx+1]=newColor[1]; arr[idx+2]=newColor[2]; arr[idx+3]=newColor[3];
-      stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
+/* تحويل إطار (frame object) المركب إلى سياق رسم (لـ onion skin و preview) */
+function compositeFrameToContext(frameObj, targetCtx) {
+  // frameObj.layersData is array of PNG base64 strings or ImageData objects
+  // سنرسم كل مصدَر بالتسلسل
+  targetCtx.clearRect(0,0,state.width,state.height);
+  targetCtx.save();
+  targetCtx.imageSmoothingEnabled = false;
+  frameObj.layersData.forEach((layerData, idx) => {
+    if (!layerData) return;
+    if (typeof layerData === 'string') {
+      // base64 image
+      const img = new Image();
+      img.src = layerData;
+      // synchronous draw is not possible; but onion skin uses only previous frame while editing small; we'll draw when loaded
+      img.onload = () => {
+        targetCtx.drawImage(img, 0, 0, state.width, state.height);
+      };
+    } else if (layerData instanceof ImageData) {
+      targetCtx.putImageData(layerData, 0, 0);
+    }
+  });
+  targetCtx.restore();
+}
+
+/* أخذ snapshot للحفظ في undo stack */
+function pushUndo() {
+  try {
+    const snap = serializeCurrentState();
+    state.undoStack.push(snap);
+    if (state.undoStack.length > state.maxUndo) state.undoStack.shift();
+    // تفريغ redo عند إجراء عملية جديدة
+    state.redoStack = [];
+    // تحديث أزرار
+    updateUndoRedoButtons();
+  } catch (e) {
+    console.warn('undo push failed', e);
+  }
+}
+
+function updateUndoRedoButtons() {
+  undoBtn.disabled = state.undoStack.length === 0;
+  redoBtn.disabled = state.redoStack.length === 0;
+}
+
+/* تراجع */
+function undo() {
+  if (state.undoStack.length === 0) return;
+  const last = state.undoStack.pop();
+  state.redoStack.push(serializeCurrentState());
+  deserializeToState(last);
+  refreshStageDom();
+  updateUndoRedoButtons();
+}
+
+/* إعادة */
+function redo() {
+  if (state.redoStack.length === 0) return;
+  const next = state.redoStack.pop();
+  state.undoStack.push(serializeCurrentState());
+  deserializeToState(next);
+  refreshStageDom();
+  updateUndoRedoButtons();
+}
+
+/* ---------------------------
+   تسلسل وتخزين الحالة (حفظ/تحميل سريع)
+   --------------------------- */
+
+/* نحصل على صورة (base64 PNG) من كانفاس */
+function canvasToBase64(c) {
+  // نستخدم دقة عمل الأصلية (width,height)
+  return c.toDataURL('image/png');
+}
+
+/* نحصل على ImageData من كانفاس */
+function getLayerImageData(layer) {
+  try {
+    return layer.ctx.getImageData(0,0, state.width, state.height);
+  } catch (e) {
+    // قد يحدث خطأ في CORS لكن هنا كل شيء محلي
+    return null;
+  }
+}
+
+/* تحويل الحالة الحالية إلى كائن قابل للحفظ (JSON) */
+function serializeCurrentState() {
+  const framesData = state.frames.map((frame) => {
+    // for each frame store an array of png base64 per layer
+    const layerImages = frame.layersData.map(ld => {
+      if (ld instanceof ImageData) {
+        // create temporary canvas
+        const tmp = document.createElement('canvas');
+        tmp.width = state.width; tmp.height = state.height;
+        tmp.getContext('2d').putImageData(ld, 0, 0);
+        return tmp.toDataURL('image/png');
+      }
+      return ld; // if already base64
+    });
+    return { layersData: layerImages };
+  });
+
+  // if no frames yet, make one from current layers
+  const payload = {
+    width: state.width,
+    height: state.height,
+    scale: state.scale,
+    frames: framesData.length ? framesData : [{
+      layersData: state.layers.map(l => canvasToBase64(l.canvas))
+    }],
+    currentFrame: state.currentFrame,
+    currentLayer: state.currentLayer,
+    layersMeta: state.layers.map(l => ({ name: l.name, visible: l.visible }))
+  };
+  return JSON.stringify(payload);
+}
+
+/* استعادة من JSON */
+function deserializeToState(jsonStr) {
+  try {
+    const obj = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+    // نظف الطبقات الحالية
+    state.width = obj.width || state.width;
+    state.height = obj.height || state.height;
+    state.scale = obj.scale || state.scale;
+    inputW.value = state.width;
+    inputH.value = state.height;
+    previewScale.value = state.scale;
+    scaleLabel.textContent = state.scale + 'x';
+
+    state.layers = [];
+    clearStageElements();
+
+    // استيراد أول إطار كحالة أولية
+    const frames = obj.frames || [];
+    frames.forEach((f, fi) => {
+      // for each frame we create a copy of layers as base64 or ImageData
+    });
+
+    // ننشئ طبقات بناءً على layersMeta أو على بيانات الإطار الأول
+    const baseFrame = (obj.frames && obj.frames[0]) || null;
+    if (baseFrame && baseFrame.layersData && baseFrame.layersData.length) {
+      baseFrame.layersData.forEach((b64, idx) => {
+        const layer = createLayerCanvas(`Layer ${idx+1}`);
+        layer.visible = true;
+        state.layers.push(layer);
+      });
+      refreshStageDom();
+      // now load image data into each layer canvas
+      baseFrame.layersData.forEach((b64, idx) => {
+        if (!b64) return;
+        const img = new Image();
+        img.src = b64;
+        img.onload = () => {
+          const l = state.layers[idx];
+          l.ctx.clearRect(0,0,state.width,state.height);
+          l.ctx.drawImage(img, 0, 0, state.width, state.height);
+          updateLayerThumb(idx);
+        };
+      });
+    } else {
+      // no frame data -> create default single layer blank
+      const layer = createLayerCanvas('Layer 1');
+      state.layers.push(layer);
+    }
+
+    // setup frames structure
+    state.frames = obj.frames.map(f => ({ layersData: f.layersData.slice() }));
+    if (!state.frames.length) {
+      state.frames = [{ layersData: state.layers.map(l => null) }];
+    }
+
+    state.currentFrame = obj.currentFrame || 0;
+    state.currentLayer = obj.currentLayer || 0;
+    refreshLayerList();
+    refreshFrameList();
+    refreshStageDom();
+    pushUndo(); // push initial state
+    showToast('تم تحميل المشروع', 'success');
+  } catch (e) {
+    console.error(e);
+    showToast('فشل استيراد الملف', 'error');
+  }
+}
+
+/* ---------------------------
+   واجهة المستخدم: الطبقات والقوائم
+   --------------------------- */
+function refreshLayerList() {
+  layersList.innerHTML = '';
+  state.layers.forEach((layer, idx) => {
+    const it = document.createElement('div');
+    it.className = 'layer-item' + (idx === state.currentLayer ? ' active' : '');
+    it.innerHTML = `
+      <div class="layer-thumb" id="thumb-${idx}"></div>
+      <div class="layer-info">
+        <div class="layer-name">${layer.name || 'Layer ' + (idx+1)}</div>
+        <div class="layer-details">${layer.visible ? 'مرئي' : 'مخفي'}</div>
+      </div>
+      <div class="layer-actions">
+        <button class="action-btn btn" data-act="vis" title="إظهار/إخفاء"><i class="fas fa-eye${layer.visible ? '' : '-slash'}"></i></button>
+        <button class="action-btn btn" data-act="up" title="رفع"><i class="fas fa-arrow-up"></i></button>
+        <button class="action-btn btn" data-act="down" title="إنزال"><i class="fas fa-arrow-down"></i></button>
+        <button class="action-btn btn" data-act="del" title="حذف"><i class="fas fa-trash"></i></button>
+      </div>
+    `;
+    // event handlers
+    it.addEventListener('click', (e) => {
+      // تجنب الاستجابة لنقر الأزرار داخل العنصر
+      if (e.target.closest('.action-btn')) return;
+      state.currentLayer = idx;
+      refreshLayerList();
+      updateLabels();
+    });
+    // actions
+    it.querySelectorAll('.action-btn').forEach(btn=>{
+      btn.addEventListener('click', (ev)=>{
+        const act = btn.getAttribute('data-act');
+        if (act === 'vis') {
+          state.layers[idx].visible = !state.layers[idx].visible;
+          refreshStageDom();
+          refreshLayerList();
+        } else if (act === 'up') {
+          if (idx === 0) return;
+          const a = state.layers.splice(idx,1)[0];
+          state.layers.splice(idx-1,0,a);
+          state.currentLayer = Math.max(0, idx-1);
+          refreshStageDom(); refreshLayerList();
+        } else if (act === 'down') {
+          if (idx === state.layers.length-1) return;
+          const a = state.layers.splice(idx,1)[0];
+          state.layers.splice(idx+1,0,a);
+          state.currentLayer = Math.min(state.layers.length-1, idx+1);
+          refreshStageDom(); refreshLayerList();
+        } else if (act === 'del') {
+          if (state.layers.length === 1) {
+            showToast('لا يمكن حذف الطبقة الأخيرة', 'error');
+            return;
+          }
+          state.layers.splice(idx,1);
+          state.currentLayer = Math.max(0, state.currentLayer-1);
+          refreshStageDom(); refreshLayerList();
+        }
+      });
+    });
+    layersList.appendChild(it);
+    updateLayerThumb(idx);
+  });
+  layerLabel.textContent = (state.currentLayer+1) + '/' + state.layers.length;
+}
+
+/* تحديث صورة مصغرة للطبقة */
+function updateLayerThumb(idx) {
+  const thumb = document.getElementById(`thumb-${idx}`);
+  if (!thumb) return;
+  const l = state.layers[idx];
+  // نأخذ نسخة صغيرة من كانفاس
+  const tmp = document.createElement('canvas');
+  tmp.width = state.width;
+  tmp.height = state.height;
+  const tctx = tmp.getContext('2d');
+  tctx.imageSmoothingEnabled = false;
+  tctx.clearRect(0,0,tmp.width,tmp.height);
+  tctx.drawImage(l.canvas, 0, 0, tmp.width, tmp.height);
+  thumb.style.backgroundImage = `url(${tmp.toDataURL()})`;
+  thumb.style.backgroundSize = 'cover';
+}
+
+/* ---------------------------
+   الإطارات (frames) - أنيميشن
+   --------------------------- */
+function refreshFrameList() {
+  framesList.innerHTML = '';
+  state.frames.forEach((frame, i) => {
+    const it = document.createElement('div');
+    it.className = 'frame-item' + (i === state.currentFrame ? ' active' : '');
+    it.innerHTML = `
+      <div class="frame-thumb" id="frame-thumb-${i}"></div>
+      <div class="frame-info">
+        <div class="frame-name">Frame ${i+1}</div>
+        <div class="frame-details">طبقات: ${frame.layersData.length}</div>
+      </div>
+      <div class="frame-actions">
+        <button class="action-btn btn" data-act="dup" title="نسخ"><i class="fas fa-clone"></i></button>
+        <button class="action-btn btn" data-act="del" title="حذف"><i class="fas fa-trash"></i></button>
+      </div>
+    `;
+    it.addEventListener('click', (e)=>{
+      if (e.target.closest('.action-btn')) return;
+      state.currentFrame = i;
+      loadFrameToLayers(i);
+      refreshFrameList();
+      refreshStageDom();
+    });
+    it.querySelectorAll('.action-btn').forEach(btn=>{
+      btn.addEventListener('click',(ev)=>{
+        const act = btn.getAttribute('data-act');
+        if (act === 'dup') {
+          // duplicate frame
+          const copy = { layersData: frame.layersData.slice() };
+          state.frames.splice(i+1,0,copy);
+          refreshFrameList();
+        } else if (act === 'del') {
+          if (state.frames.length === 1) { showToast('لا يمكن حذف الإطار الأخير','error'); return; }
+          state.frames.splice(i,1);
+          state.currentFrame = Math.max(0, state.currentFrame-1);
+          refreshFrameList();
+          loadFrameToLayers(state.currentFrame);
+          refreshStageDom();
+        }
+      });
+    });
+    framesList.appendChild(it);
+    updateFrameThumb(i);
+  });
+  frameLabel.textContent = (state.currentFrame+1) + '/' + state.frames.length;
+}
+
+/* تحديث مصغرة للإطار */
+function updateFrameThumb(i) {
+  const el = document.getElementById(`frame-thumb-${i}`);
+  if (!el) return;
+  // نجمع الإطارات على كانفاس مؤقت ونحفظها كصورة
+  const tmp = document.createElement('canvas');
+  tmp.width = state.width;
+  tmp.height = state.height;
+  const tctx = tmp.getContext('2d');
+  tctx.clearRect(0,0,tmp.width,tmp.height);
+  tctx.imageSmoothingEnabled = false;
+  const frame = state.frames[i];
+  if (!frame) { el.style.background = '#0f172a'; return; }
+  // إذا كانت layersData عبارة عن صور base64
+  const drawPromises = [];
+  frame.layersData.forEach(ld => {
+    if (!ld) return;
+    if (typeof ld === 'string') {
+      const p = new Promise(res=>{
+        const img = new Image();
+        img.src = ld;
+        img.onload = () => { tctx.drawImage(img,0,0,tmp.width,tmp.height); res(); };
+        img.onerror = () => res();
+      });
+      drawPromises.push(p);
+    } else if (ld instanceof ImageData) {
+      tctx.putImageData(ld,0,0);
+    }
+  });
+  Promise.all(drawPromises).then(()=> {
+    el.style.backgroundImage = `url(${tmp.toDataURL()})`;
+    el.style.backgroundSize = 'cover';
+  });
+}
+
+/* تحميل إطار إلى طبقات العمل الحالية (استبدال محتوى الطبقات) */
+function loadFrameToLayers(frameIndex) {
+  const frame = state.frames[frameIndex];
+  if (!frame) return;
+  // إذا عدد الطبقات في المشروع لا يساوي طبقات الإطار -> نضبط نفس العدد
+  if (frame.layersData.length !== state.layers.length) {
+    // إعادة إنشاء طبقات بنفس العدد
+    state.layers = [];
+    frame.layersData.forEach((ld, idx) => {
+      const newL = createLayerCanvas('Layer ' + (idx+1));
+      state.layers.push(newL);
+    });
+  }
+  // الآن نرسم ما في frame.layersData لكل طبقة
+  frame.layersData.forEach((ld, idx) => {
+    if (!ld) {
+      // نترك الطبقة فارغة
+      state.layers[idx].ctx.clearRect(0,0,state.width,state.height);
+      updateLayerThumb(idx);
+      return;
+    }
+    if (typeof ld === 'string') {
+      const img = new Image();
+      img.src = ld;
+      img.onload = () => {
+        const l = state.layers[idx];
+        l.ctx.clearRect(0,0,state.width,state.height);
+        l.ctx.drawImage(img,0,0,state.width,state.height);
+        updateLayerThumb(idx);
+      };
+    } else if (ld instanceof ImageData) {
+      state.layers[idx].ctx.putImageData(ld,0,0);
+      updateLayerThumb(idx);
+    }
+  });
+  refreshLayerList();
+}
+
+/* حفظ الإطار الحالي من محتوى الطبقات */
+function saveCurrentFrameFromLayers(index) {
+  const frame = state.frames[index] || { layersData: [] };
+  frame.layersData = state.layers.map(l => {
+    // حفظ كل طبقة كـ base64 صغير
+    return canvasToBase64(l.canvas);
+  });
+  state.frames[index] = frame;
+  updateFrameThumb(index);
+}
+
+/* ---------------------------
+   أدوات الرسم
+   --------------------------- */
+
+/* تحويل إحداثيات بكسل من موضع حدث */
+function stagePointFromEvent(e) {
+  // stage contains an inline-block wrapper -> نأخذ إحداثيات wrapper
+  const wrapper = stage.firstChild;
+  if (!wrapper) return {x:0,y:0};
+  const rect = wrapper.getBoundingClientRect();
+  const clientX = (e.touches ? e.touches[0].clientX : e.clientX);
+  const clientY = (e.touches ? e.touches[0].clientY : e.clientY);
+  const px = Math.floor((clientX - rect.left) / state.scale);
+  const py = Math.floor((rect.top <= clientY ? (clientY - rect.top) : 0) / state.scale);
+  return { x: Math.max(0, Math.min(state.width-1, px)), y: Math.max(0, Math.min(state.height-1, py)) };
+}
+
+/* رسم نقطة بحجم الفرشاة على الطبقة الحالية */
+function drawBrushAt(x, y, color) {
+  const layer = state.layers[state.currentLayer];
+  if (!layer) return;
+  const ctx = layer.ctx;
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = color;
+  const s = state.brush;
+  // نرسم مربع s x s معتمداً على المنتصف
+  const half = Math.floor(s/2);
+  for (let dx = -half; dx <= half; dx++) {
+    for (let dy = -half; dy <= half; dy++) {
+      const px = x + dx;
+      const py = y + dy;
+      if (px < 0 || py < 0 || px >= state.width || py >= state.height) continue;
+      ctx.fillRect(px, py, 1, 1);
     }
   }
-  // redraw layer canvas
-  const c = layers[layerIdx];
-  c.getContext('2d').putImageData(new ImageData(arr,W,H),0,0);
+  updateLayerThumb(state.currentLayer);
 }
 
-/* ======= أدوات التفاعل (pointer) ======= */
-let pointerDown = false; let startX=0,startY=0; let lastX=0,lastY=0; let moving=false; let moveBuffer=null;
-
-function canvasPointerToGrid(e){
-  const rect = stage.getBoundingClientRect();
-  const px = e.clientX - rect.left; const py = e.clientY - rect.top;
-  const gx = Math.floor(px/scale); const gy = Math.floor(py/scale);
-  return [gx,gy];
-}
-
-stage.addEventListener('pointerdown', (ev)=>{
-  ev.preventDefault(); pointerDown=true; const [gx,gy]=canvasPointerToGrid(ev); startX=gx; startY=gy; lastX=gx; lastY=gy;
-  if(tool==='pen'){ const rgba = hexToRgbaArray(color); for(let ix=0;ix<brush;ix++) for(let iy=0;iy<brush;iy++) putPixelOnLayer(activeLayer, gx+ix, gy+iy, rgba); }
-  else if(tool==='eraser'){ const rgba=[0,0,0,0]; for(let ix=0;ix<brush;ix++) for(let iy=0;iy<brush;iy++) putPixelOnLayer(activeLayer,gx+ix,gy+iy,rgba);} 
-  else if(tool==='fill') floodFill(activeLayer,gx,gy,hexToRgbaArray(color));
-  else if(tool==='picker'){ // read merged pixel at point
-    const merged = mergeVisibleLayers(); const idx=(gy*W+gx)*4; const r=merged[idx],g=merged[idx+1],b=merged[idx+2],a=merged[idx+3]; if(a===0){ /* transparent */ } else { color = rgbToHex(r,g,b); document.getElementById('colorPicker').value = color; colorLabel.textContent = color; }
+/* ممسحة: تمسح بكسلات إلى الشفافية */
+function eraserAt(x,y) {
+  const layer = state.layers[state.currentLayer];
+  if (!layer) return;
+  const ctx = layer.ctx;
+  const s = state.brush;
+  const half = Math.floor(s/2);
+  for (let dx = -half; dx <= half; dx++) {
+    for (let dy = -half; dy <= half; dy++) {
+      const px = x + dx;
+      const py = y + dy;
+      if (px < 0 || py < 0 || px >= state.width || py >= state.height) continue;
+      ctx.clearRect(px, py, 1, 1);
+    }
   }
-  else if(tool==='move'){
-    // create buffer of active layer to move
-    const arr = frames[activeFrame][activeLayer]; moveBuffer = new Uint8ClampedArray(arr); moving=true; }
+  updateLayerThumb(state.currentLayer);
+}
+
+/* دلو تعبئة (flood fill) */
+function floodFill(x,y, fillColor) {
+  const layer = state.layers[state.currentLayer];
+  const ctx = layer.ctx;
+  const w = state.width, h = state.height;
+  const imageData = ctx.getImageData(0,0,w,h);
+  const data = imageData.data;
+  const idx = (y * w + x) * 4;
+  const targetR = data[idx], targetG = data[idx+1], targetB = data[idx+2], targetA = data[idx+3];
+  // parse fillColor (#rrggbb)
+  const fc = hexToRgba(fillColor);
+  if (!fc) return;
+  if (targetR === fc.r && targetG === fc.g && targetB === fc.b && targetA === fc.a) return;
+  const stack = [[x,y]];
+  while (stack.length) {
+    const [cx,cy] = stack.pop();
+    const i = (cy * w + cx) * 4;
+    if (cx < 0 || cy < 0 || cx >= w || cy >= h) continue;
+    if (data[i] === targetR && data[i+1] === targetG && data[i+2] === targetB && data[i+3] === targetA) {
+      data[i] = fc.r; data[i+1] = fc.g; data[i+2] = fc.b; data[i+3] = fc.a;
+      stack.push([cx+1,cy]); stack.push([cx-1,cy]); stack.push([cx,cy+1]); stack.push([cx,cy-1]);
+    }
+  }
+  ctx.putImageData(imageData,0,0);
+  updateLayerThumb(state.currentLayer);
+}
+
+/* تحويل hex إلى rgba */
+function hexToRgba(hex) {
+  if (!hex) return null;
+  let h = hex.replace('#','');
+  if (h.length === 3) h = h.split('').map(c=>c+c).join('');
+  const r = parseInt(h.substr(0,2),16);
+  const g = parseInt(h.substr(2,2),16);
+  const b = parseInt(h.substr(4,2),16);
+  return { r, g, b, a: 255 };
+}
+
+/* أداة المنتقي: نأخذ اللون من الطبقة (أعلى طبقة مرئية عند البكسل) */
+function pickColorAt(x,y) {
+  // نبحث من أعلى لأسفل
+  for (let i = state.layers.length - 1; i >= 0; i--) {
+    const l = state.layers[i];
+    if (!l.visible) continue;
+    const d = l.ctx.getImageData(x,y,1,1).data;
+    if (d[3] !== 0) {
+      // لون غير شفاف
+      const hex = rgbaToHex(d[0],d[1],d[2],d[3]);
+      state.color = hex;
+      colorPicker.value = hex;
+      colorLabel.textContent = hex;
+      document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+      return;
+    }
+  }
+  showToast('لم يتم العثور على لون عند الموقع', 'warning');
+}
+
+/* rgba إلى hex (نهمل alpha إذا كانت 255) */
+function rgbaToHex(r,g,b,a=255) {
+  const toHex = v => ('0' + v.toString(16)).slice(-2);
+  return '#' + toHex(r) + toHex(g) + toHex(b);
+}
+
+/* رسم خط بين نقطتين باستخدام خوارزمية بسيطة (Bresenham-like) */
+function drawLine(x0,y0,x1,y1,color) {
+  const dx = Math.abs(x1-x0);
+  const dy = Math.abs(y1-y0);
+  const sx = (x0 < x1) ? 1 : -1;
+  const sy = (y0 < y1) ? 1 : -1;
+  let err = dx - dy;
+  let x = x0, y = y0;
+  while(true) {
+    // رسم بفرشاة
+    drawBrushAt(x,y,color);
+    if (x === x1 && y === y1) break;
+    const e2 = 2*err;
+    if (e2 > -dy) { err -= dy; x += sx; }
+    if (e2 < dx) { err += dx; y += sy; }
+  }
+}
+
+/* رسم مستطيل مملوء أو إطار */
+function drawRect(x0,y0,x1,y1,color, fill=true) {
+  const x = Math.min(x0,x1), y = Math.min(y0,y1);
+  const w = Math.abs(x1-x0)+1, h = Math.abs(y1-y0)+1;
+  const layer = state.layers[state.currentLayer];
+  if (fill) {
+    layer.ctx.fillStyle = color;
+    layer.ctx.fillRect(x, y, w, h);
+  } else {
+    // رسم حدود
+    drawLine(x,y, x+w-1, y, color);
+    drawLine(x,y, x, y+h-1, color);
+    drawLine(x+w-1,y+h-1, x+w-1, y, color);
+    drawLine(x+w-1,y+h-1, x, y+h-1, color);
+  }
+  updateLayerThumb(state.currentLayer);
+}
+
+/* رسم دائرة تقريبية (midpoint) */
+function drawCircle(cx,cy, rx, ry, color, fill=true) {
+  // نفترض دائرة بمتوسط نصف القطر
+  const layer = state.layers[state.currentLayer];
+  layer.ctx.fillStyle = color;
+  for (let x = -rx; x <= rx; x++) {
+    for (let y = -ry; y <= ry; y++) {
+      if ((x*x)/(rx*rx) + (y*y)/(ry*ry) <= 1) {
+        if (fill) layer.ctx.fillRect(cx + x, cy + y, 1, 1);
+      }
+    }
+  }
+  updateLayerThumb(state.currentLayer);
+}
+
+/* ---------------------------
+   حدث الماوس واللمس للرسم
+   --------------------------- */
+let isDown = false;
+let lastPoint = null;
+let dragStart = null;
+let currentShapeStart = null;
+let tempOverlay = null; // للعرض المؤقت أثناء الرسم (مثل المستطيل/الدائرة/الخط)
+function attachPointerEvents() {
+  // المرة الوحيدة نلتقط أحداث اللمس/الماوس على العنصر wrapper
+  stage.addEventListener('pointerdown', onPointerDown);
+  stage.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp);
+  // منع السحب الافتراضي على اللمس
+  stage.addEventListener('touchstart', (e)=> e.preventDefault(), { passive:false });
+}
+
+function onPointerDown(e) {
+  e.preventDefault();
+  const p = stagePointFromEvent(e);
+  isDown = true;
+  lastPoint = p;
+  dragStart = p;
+  currentShapeStart = p;
+  pushUndo(); // snapshot قبل التغييرات
+  if (['pen','eraser'].includes(state.tool)) {
+    if (state.tool === 'pen') drawBrushAt(p.x,p.y, state.color);
+    else eraserAt(p.x,p.y);
+  } else if (state.tool === 'fill') {
+    floodFill(p.x,p.y, state.color);
+  } else if (state.tool === 'picker') {
+    pickColorAt(p.x,p.y);
+  } else if (['line','rect','circle','select'].includes(state.tool)) {
+    // إنشاء overlay canvas للرسم المؤقت (نقطة بداية)
+    createTempOverlay();
+  } else if (state.tool === 'move') {
+    // not implemented move selection for now - simple placeholder
+    showToast('أداة التحريك ليست متقدمة بعد — سنضيفها لاحقاً', 'warning');
+  }
+  updateCoordsLabel(p.x,p.y);
+}
+
+function onPointerMove(e) {
+  if (!isDown) return;
+  const p = stagePointFromEvent(e);
+  updateCoordsLabel(p.x,p.y);
+  if (['pen','eraser'].includes(state.tool)) {
+    // رسم متقطع بين lastPoint و p
+    if (lastPoint) drawLine(lastPoint.x, lastPoint.y, p.x, p.y, state.tool === 'pen' ? state.color : null);
+    lastPoint = p;
+  } else if (['line','rect','circle'].includes(state.tool)) {
+    // نحدث overlay المؤقت
+    if (!tempOverlay) createTempOverlay();
+    drawTempShape(currentShapeStart, p, state.tool);
+  }
+}
+
+function onPointerUp(e) {
+  if (!isDown) return;
+  isDown = false;
+  const p = stagePointFromEvent(e);
+  // finalize temporary shapes
+  if (tempOverlay) {
+    // تطبيق الشكل على الطبقة الفعلية
+    if (state.tool === 'line') {
+      drawLine(currentShapeStart.x, currentShapeStart.y, p.x, p.y, state.color);
+    } else if (state.tool === 'rect') {
+      drawRect(currentShapeStart.x, currentShapeStart.y, p.x, p.y, state.color, true);
+    } else if (state.tool === 'circle') {
+      const rx = Math.abs(p.x - currentShapeStart.x);
+      const ry = Math.abs(p.y - currentShapeStart.y);
+      drawCircle(currentShapeStart.x, currentShapeStart.y, rx, ry, state.color, true);
+    }
+    // إزالة overlay من DOM
+    tempOverlay.remove();
+    tempOverlay = null;
+  }
+  // بعد كل إجراء، نحفظ الإطار الحالي
+  saveCurrentFrameFromLayers(state.currentFrame);
+  refreshStageDom();
+  refreshLayerList();
+  refreshFrameList();
+}
+
+/* إنشاء كانفاس مؤقت لأغراض الرسم (overlay) */
+function createTempOverlay() {
+  if (tempOverlay) return;
+  tempOverlay = document.createElement('canvas');
+  tempOverlay.width = state.width;
+  tempOverlay.height = state.height;
+  tempOverlay.style.width = (state.width * state.scale) + 'px';
+  tempOverlay.style.height = (state.height * state.scale) + 'px';
+  tempOverlay.style.position = 'absolute';
+  tempOverlay.style.left = '0';
+  tempOverlay.style.top = '0';
+  tempOverlay.style.zIndex = 99999;
+  tempOverlay.style.pointerEvents = 'none';
+  tempOverlay.getContext('2d').imageSmoothingEnabled = false;
+  const wrapper = stage.firstChild;
+  if (wrapper) wrapper.appendChild(tempOverlay);
+}
+
+/* رسم الشكل على overlay (خط/مستطيل/دائرة) */
+function drawTempShape(start, end, mode) {
+  if (!tempOverlay) return;
+  const ctx = tempOverlay.getContext('2d');
+  ctx.clearRect(0,0,tempOverlay.width,tempOverlay.height);
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.strokeStyle = state.color;
+  ctx.fillStyle = state.color;
+  if (mode === 'line') {
+    ctx.beginPath();
+    ctx.moveTo(start.x + 0.5, start.y + 0.5);
+    ctx.lineTo(end.x + 0.5, end.y + 0.5);
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  } else if (mode === 'rect') {
+    const x = Math.min(start.x, end.x), y = Math.min(start.y, end.y);
+    const w = Math.abs(end.x - start.x) + 1, h = Math.abs(end.y - start.y) + 1;
+    ctx.fillRect(x, y, w, h);
+  } else if (mode === 'circle') {
+    const rx = Math.abs(end.x - start.x), ry = Math.abs(end.y - start.y);
+    // تقريب الدائرة بملء المحاور
+    for (let xx = -rx; xx <= rx; xx++) {
+      for (let yy = -ry; yy <= ry; yy++) {
+        if ((xx*xx)/(rx*rx + 0.0001) + (yy*yy)/(ry*ry + 0.0001) <= 1) {
+          ctx.fillRect(start.x + xx, start.y + yy, 1,1);
+        }
+      }
+    }
+  }
+  ctx.restore();
+}
+
+/* تحديث واجهة الإحداثيات/الحجم/التسمية */
+function updateCoordsLabel(x,y) {
+  coordsLabel.textContent = x + ', ' + y;
+}
+function updateLabels() {
+  sizeLabel.textContent = state.width + 'x' + state.height;
+  scaleLabel.textContent = state.scale + 'x';
+  colorLabel.textContent = state.color;
+  activeToolLabel.textContent = document.querySelector(`.tool[data-tool="${state.tool}"]`)?.title || state.tool;
+  frameLabel.textContent = (state.currentFrame+1) + '/' + state.frames.length;
+  layerLabel.textContent = (state.currentLayer+1) + '/' + state.layers.length;
+}
+
+/* ---------------------------
+   عناصر التحكم (الأزرار)
+   --------------------------- */
+document.querySelectorAll('.tool').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tool').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    state.tool = btn.dataset.tool;
+    activeToolLabel.textContent = btn.title;
+  });
 });
 
-stage.addEventListener('pointermove', (ev)=>{
-  if(!pointerDown) return; const [gx,gy]=canvasPointerToGrid(ev);
-  if(tool==='pen'){ const rgba = hexToRgbaArray(color); drawLine(activeLayer,lastX,lastY,gx,gy,rgba); }
-  else if(tool==='eraser'){ const rgba=[0,0,0,0]; drawLine(activeLayer,lastX,lastY,gx,gy,rgba); }
-  else if(tool==='line' || tool==='rect' || tool==='circle'){
-    // preview: re-render stage from frame but draw overlay on top using an overlay canvas
-    renderStage(); createOverlayPreview(tool, startX, startY, gx, gy);
-  }
-  else if(tool==='move' && moving){
-    // shift buffer by dx,dy and place into layer
-    const dx = gx - startX, dy = gy - startY;
-    const arr = frames[activeFrame][activeLayer];
-    // clear arr
-    for(let i=0;i<arr.length;i+=4) arr[i+3]=0;
-    for(let y=0;y<H;y++) for(let x=0;x<W;x++){
-      const sx = x - dx, sy = y - dy;
-      if(sx>=0 && sy>=0 && sx<W && sy<H){ const sidx=(sy*W+sx)*4; const didx=(y*W+x)*4; arr[didx]=moveBuffer[sidx]; arr[didx+1]=moveBuffer[sidx+1]; arr[didx+2]=moveBuffer[sidx+2]; arr[didx+3]=moveBuffer[sidx+3]; }
-    }
-    layers[activeLayer].getContext('2d').putImageData(new ImageData(arr,W,H),0,0);
-  }
-  lastX=gx; lastY=gy;
+document.querySelectorAll('.color-swatch').forEach(s=>{
+  s.addEventListener('click', ()=>{
+    document.querySelectorAll('.color-swatch').forEach(ss=>ss.classList.remove('active'));
+    s.classList.add('active');
+    const c = s.getAttribute('data-color');
+    colorPicker.value = c;
+    state.color = c;
+    colorLabel.textContent = c;
+  });
 });
 
-stage.addEventListener('pointerup', (ev)=>{
-  pointerDown=false; moving=false; moveBuffer=null; // finalize shapes
-  const [gx,gy]=canvasPointerToGrid(ev);
-  if(tool==='line'){ drawLine(activeLayer,startX,startY,gx,gy,hexToRgbaArray(color)); }
-  else if(tool==='rect'){ const x=Math.min(startX,gx); const y=Math.min(startY,gy); const w=Math.abs(gx-startX)+1; const h=Math.abs(gy-startY)+1; drawRect(activeLayer,x,y,w,h,hexToRgbaArray(color), false); }
-  else if(tool==='circle'){ const dx=gx-startX, dy=gy-startY; const r=Math.round(Math.sqrt(dx*dx+dy*dy)); drawCircle(activeLayer,startX,startY,r,hexToRgbaArray(color), false); }
+colorPicker.addEventListener('input', (e)=>{
+  state.color = e.target.value;
+  colorLabel.textContent = state.color;
 });
 
-/* ======= معاينات (overlay) للأشكال أثناء السحب ======= */
-function createOverlayPreview(toolName,x0,y0,x1,y1){
-  const overlay = document.createElement('canvas'); overlay.width=W; overlay.height=H; overlay.style.position='absolute'; overlay.style.left='0'; overlay.style.top='0'; overlay.style.zIndex = 9999; overlay.style.width=(W*scale)+'px'; overlay.style.height=(H*scale)+'px'; overlay.getContext('2d').imageSmoothingEnabled = false;
-  const octx = overlay.getContext('2d');
-  octx.clearRect(0,0,W,H);
-  const rgba = hexToRgbaArray(color);
-  if(toolName==='line'){ // draw preview line
-    drawLinePreview(octx,x0,y0,x1,y1,rgba);
-  } else if(toolName==='rect'){
-    const x=Math.min(x0,x1), y=Math.min(y0,y1), w=Math.abs(x1-x0)+1, h=Math.abs(y1-y0)+1;
-    // stroke
-    drawRectPreview(octx,x,y,w,h,rgba);
-  } else if(toolName==='circle'){
-    const dx=x1-x0, dy=y1-y0, r=Math.round(Math.sqrt(dx*dx+dy*dy));
-    drawCirclePreview(octx,x0,y0,r,rgba);
-  }
-  stage.appendChild(overlay);
-}
-function drawLinePreview(octx,x0,y0,x1,y1,rgba){ // very light overlay
-  const img = octx.getImageData(0,0,W,H);
-  // use same bresenham to set pixels with alpha 200
-  x0=Math.floor(x0);y0=Math.floor(y0);x1=Math.floor(x1);y1=Math.floor(y1);
-  const dx = Math.abs(x1-x0), sx = x0<x1?1:-1; const dy = -Math.abs(y1-y0), sy = y0<y1?1:-1; let err=dx+dy;
-  while(true){ const idx=(y0*W+x0)*4; img.data[idx]=rgba[0]; img.data[idx+1]=rgba[1]; img.data[idx+2]=rgba[2]; img.data[idx+3]=180; if(x0===x1 && y0===y1) break; let e2=2*err; if(e2>=dy){ err+=dy; x0+=sx; } if(e2<=dx){ err+=dx; y0+=sy; } }
-  octx.putImageData(img,0,0);
-}
-function drawRectPreview(octx,x,y,w,h,rgba){ const img=octx.getImageData(0,0,W,H); for(let i=0;i<w;i++){ let idx=(y*W + (x+i))*4; img.data[idx]=rgba[0];img.data[idx+1]=rgba[1];img.data[idx+2]=rgba[2];img.data[idx+3]=160; idx=((y+h-1)*W + (x+i))*4; img.data[idx]=rgba[0];img.data[idx+1]=rgba[1];img.data[idx+2]=rgba[2];img.data[idx+3]=160; } for(let j=0;j<h;j++){ let idx=( (y+j)*W + x)*4; img.data[idx]=rgba[0];img.data[idx+1]=rgba[1];img.data[idx+2]=rgba[2];img.data[idx+3]=160; idx=( (y+j)*W + (x+w-1))*4; img.data[idx]=rgba[0];img.data[idx+1]=rgba[1];img.data[idx+2]=rgba[2];img.data[idx+3]=160; } octx.putImageData(img,0,0); }
-function drawCirclePreview(octx,cx,cy,r,rgba){ const img=octx.getImageData(0,0,W,H); for(let y=cy-r;y<=cy+r;y++){ for(let x=cx-r;x<=cx+r;x++){ if(x>=0 && y>=0 && x<W && y<H){ if((x-cx)*(x-cx)+(y-cy)*(y-cy) <= r*r){ const idx=(y*W+x)*4; img.data[idx]=rgba[0];img.data[idx+1]=rgba[1];img.data[idx+2]=rgba[2];img.data[idx+3]=140; } } } } octx.putImageData(img,0,0); }
+brushSize.addEventListener('input', (e)=>{
+  state.brush = parseInt(e.target.value,10) || 1;
+  brushSizeValue.textContent = state.brush;
+});
 
-/* ======= دمج الطبقات للحصول على بكسل واحد (للـ picker) ======= */
-function mergeVisibleLayers(){
-  // هنا كل الطبقات مرئية دائماً — ندمج ببساطة من الأسفل للأعلى
-  const out = new Uint8ClampedArray(W*H*4);
-  for(let i=0;i<W*H*4;i+=4){ out[i]=0; out[i+1]=0; out[i+2]=0; out[i+3]=0; }
-  const frame = frames[activeFrame];
-  frame.forEach(layerArr=>{
-    for(let i=0;i<layerArr.length;i+=4){ const a = layerArr[i+3]/255; if(a===0) continue; // شفاف
-      // alpha compositing over
-      const dstIdx = i;
-      const sr = layerArr[i], sg=layerArr[i+1], sb=layerArr[i+2], sa=layerArr[i+3]/255;
-      const dr = out[dstIdx], dg = out[dstIdx+1], db = out[dstIdx+2], da = out[dstIdx+3]/255;
-      const outA = sa + da*(1-sa);
-      if(outA>0){ out[dstIdx] = Math.round((sr*sa + dr*da*(1-sa))/outA); out[dstIdx+1] = Math.round((sg*sa + dg*da*(1-sa))/outA); out[dstIdx+2] = Math.round((sb*sa + db*da*(1-sa))/outA); out[dstIdx+3] = Math.round(outA*255); }
+previewScale.addEventListener('change', (e)=>{
+  state.scale = parseInt(e.target.value,10) || 16;
+  scaleLabel.textContent = state.scale + 'x';
+  refreshStageDom();
+});
+
+toggleGridBtn.addEventListener('click', ()=>{
+  state.showGrid = !state.showGrid;
+  refreshStageDom();
+});
+
+toggleOnionBtn.addEventListener('click', ()=>{
+  state.onionSkin = !state.onionSkin;
+  refreshStageDom();
+});
+
+addLayerBtn.addEventListener('click', ()=>{
+  const l = createLayerCanvas(`Layer ${state.layers.length+1}`);
+  state.layers.push(l);
+  state.currentLayer = state.layers.length - 1;
+  refreshStageDom();
+  refreshLayerList();
+  pushUndo();
+});
+
+removeLayerBtn.addEventListener('click', ()=>{
+  if (state.layers.length === 1) { showToast('لا يمكن حذف الطبقة الأخيرة','error'); return; }
+  state.layers.splice(state.currentLayer,1);
+  state.currentLayer = Math.max(0, state.currentLayer - 1);
+  refreshStageDom();
+  refreshLayerList();
+  pushUndo();
+});
+
+addFrameBtn.addEventListener('click', ()=>{
+  // حفظ الإطار الحالي ثم إضافة إطار جديد كنسخة
+  saveCurrentFrameFromLayers(state.currentFrame);
+  const copy = { layersData: state.layers.map(l => canvasToBase64(l.canvas)) };
+  state.frames.splice(state.currentFrame+1,0, copy );
+  state.currentFrame++;
+  refreshFrameList();
+  pushUndo();
+});
+
+removeFrameBtn.addEventListener('click', ()=>{
+  if (state.frames.length === 1) { showToast('لا يمكن حذف الإطار الأخير','error'); return; }
+  state.frames.splice(state.currentFrame,1);
+  state.currentFrame = Math.max(0, state.currentFrame-1);
+  loadFrameToLayers(state.currentFrame);
+  refreshFrameList();
+  pushUndo();
+});
+
+playBtn.addEventListener('click', ()=>{
+  if (state.playing) return;
+  state.playing = true;
+  let idx = state.currentFrame;
+  const fps = parseInt(fpsInput.value,10) || state.fps;
+  const interval = 1000 / fps;
+  let timer = setInterval(()=>{
+    // عرض كل إطار على قماش مؤقت أعلى الـstage
+    const preview = document.createElement('canvas');
+    preview.width = state.width; preview.height = state.height;
+    preview.style.width = (state.width * state.scale) + 'px';
+    preview.style.height = (state.height * state.scale) + 'px';
+    preview.style.position = 'absolute'; preview.style.left='0'; preview.style.top='0'; preview.style.zIndex = 999999; preview.style.pointerEvents='none';
+    const pctx = preview.getContext('2d');
+    pctx.imageSmoothingEnabled = false;
+    compositeFrameToContext(state.frames[idx], pctx);
+    const wrapper = stage.firstChild;
+    if (wrapper) wrapper.appendChild(preview);
+    setTimeout(()=> preview.remove(), interval);
+    idx = (idx+1) % state.frames.length;
+    if (!state.playing) {
+      clearInterval(timer);
+      preview.remove();
     }
+  }, interval);
+  // إيقاف بعد الضغط على إيقاف
+});
+
+stopBtn.addEventListener('click', ()=>{
+  state.playing = false;
+});
+
+fpsInput.addEventListener('change',(e)=>{
+  state.fps = parseInt(e.target.value,10) || state.fps;
+});
+
+newBtn.addEventListener('click', ()=>{
+  if (!confirm('إنشاء مشروع جديد سيحذف التغييرات غير المحفوظة. متابعة؟')) return;
+  state.width = 32; state.height = 32; state.scale = 16;
+  inputW.value = state.width; inputH.value = state.height; previewScale.value = state.scale;
+  state.layers = [ createLayerCanvas('Layer 1') ];
+  state.frames = [{ layersData: [ null ] }];
+  state.currentFrame = 0; state.currentLayer = 0;
+  state.undoStack = []; state.redoStack = [];
+  refreshStageDom(); refreshLayerList(); refreshFrameList(); pushUndo();
+});
+
+saveBtn.addEventListener('click', ()=>{
+  saveCurrentFrameFromLayers(state.currentFrame);
+  const json = serializeCurrentState();
+  const blob = new Blob([json], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'pixelpro_project.json'; document.body.appendChild(a); a.click();
+  a.remove(); URL.revokeObjectURL(url);
+  showToast('تم حفظ المشروع محلياً', 'success');
+});
+
+loadBtn.addEventListener('click', ()=> fileInput.click());
+fileInput.addEventListener('change', (e)=>{
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      deserializeToState(reader.result);
+    } catch (err) { showToast('ملف غير صالح', 'error'); }
+  };
+  reader.readAsText(f);
+});
+
+exportBtn.addEventListener('click', ()=>{
+  // نرسم كل طبقات على كانفاس واحد بدقة عمل الأصلية ثم نصدّر PNG
+  const out = document.createElement('canvas');
+  out.width = state.width; out.height = state.height;
+  const octx = out.getContext('2d');
+  octx.clearRect(0,0,out.width,out.height);
+  state.layers.forEach(l => {
+    if (!l.visible) return;
+    octx.drawImage(l.canvas,0,0,out.width,out.height);
   });
-  return out;
-}
+  // نفتح صورة جديدة كـ png بدقة مقياس (scale مضروب)
+  const link = document.createElement('a');
+  link.href = out.toDataURL('image/png');
+  link.download = 'pixelpro_export.png';
+  document.body.appendChild(link); link.click(); link.remove();
+  showToast('تم تصدير PNG', 'success');
+});
 
-/* ======= قائمة الطبقات والإطارات في الـ UI ======= */
-function updateUILists(){
-  // Layers
-  layersDiv.innerHTML='';
-  layers.forEach((c,idx)=>{
-    const item = document.createElement('div'); item.className='layer-item';
-    item.innerHTML = `<div style="flex:1">طبقة ${idx+1}</div><div style='display:flex;gap:6px'><button data-idx='${idx}' class='btn selLayer'>تحديد</button><button data-idx='${idx}' class='btn delLayer'>حذف</button></div>`;
-    layersDiv.appendChild(item);
+undoBtn.addEventListener('click', undo);
+redoBtn.addEventListener('click', redo);
+
+zoomInBtn.addEventListener('click', ()=>{
+  state.scale = Math.min(64, state.scale + 4);
+  previewScale.value = state.scale; scaleLabel.textContent = state.scale + 'x';
+  refreshStageDom();
+});
+zoomOutBtn.addEventListener('click', ()=>{
+  state.scale = Math.max(4, state.scale - 4);
+  previewScale.value = state.scale; scaleLabel.textContent = state.scale + 'x';
+  refreshStageDom();
+});
+centerCanvasBtn.addEventListener('click', ()=>{
+  // نحاول توسيط wrapper داخل stage (إذا كان overflow)
+  const wrapper = stage.firstChild;
+  if (!wrapper) return;
+  wrapper.scrollIntoView({behavior:'smooth', block:'center', inline:'center'});
+});
+
+/* تكبير/تصغير الشبكة */
+resizeBtn.addEventListener('click', ()=>{
+  const w = Math.max(4, Math.min(256, parseInt(inputW.value,10) || state.width));
+  const h = Math.max(4, Math.min(256, parseInt(inputH.value,10) || state.height));
+  state.width = w; state.height = h;
+  // إعادة إنشاء canvases لكل طبقة (نحتفظ بمحتويات عبر رسمها مؤقتًا)
+  state.layers.forEach(l => {
+    // أخذ نسخة
+    const tmp = document.createElement('canvas');
+    tmp.width = l.canvas.width; tmp.height = l.canvas.height;
+    tmp.getContext('2d').drawImage(l.canvas, 0, 0);
+    l.canvas.width = w; l.canvas.height = h;
+    l.ctx.clearRect(0,0,w,h);
+    l.ctx.drawImage(tmp, 0, 0, w, h);
   });
-  layersDiv.querySelectorAll('.selLayer').forEach(b=>b.onclick = e=> { activeLayer = parseInt(e.target.dataset.idx); highlightActive(); });
-  layersDiv.querySelectorAll('.delLayer').forEach(b=>b.onclick = e=> { const idx=parseInt(e.target.dataset.idx); if(frames[activeFrame].length<=1) return alert('لا يمكن حذف آخر طبقة'); frames[activeFrame].splice(idx,1); activeLayer = Math.max(0, activeLayer-1); renderStage(); });
+  // إعادة رسم الشبكة والمرحلة
+  refreshStageDom();
+  refreshLayerList();
+  pushUndo();
+});
 
-  // Frames
-  framesDiv.innerHTML='';
-  frames.forEach((frameLayers, fIdx)=>{
-    const item = document.createElement('div'); item.className='frame-item';
-    const thumb = document.createElement('canvas'); thumb.width=W; thumb.height=H; thumb.className='frame-thumb'; const tctx = thumb.getContext('2d'); tctx.imageSmoothingEnabled=false; // دمج طبقات الفريم للرسم
-    const tmp = tctx.createImageData(W,H);
-    const merged = new Uint8ClampedArray(W*H*4);
-    frameLayers.forEach(layerArr=>{ for(let i=0;i<layerArr.length;i+=4){ const a = layerArr[i+3]/255; if(a===0) continue; merged[i]=layerArr[i]; merged[i+1]=layerArr[i+1]; merged[i+2]=layerArr[i+2]; merged[i+3]=layerArr[i+3]; }});
-    tmp.data.set(merged); tctx.putImageData(tmp,0,0);
-    item.appendChild(thumb);
-    const meta = document.createElement('div'); meta.style.display='flex'; meta.style.flexDirection='column'; meta.style.gap='6px'; meta.innerHTML = `<div>إطار ${fIdx+1}</div><div style='display:flex;gap:6px'><button data-f='${fIdx}' class='btn selFrame'>تحديد</button><button data-f='${fIdx}' class='btn delFrame'>حذف</button><button data-f='${fIdx}' class='btn dupFrame'>نسخ</button></div>`;
-    item.appendChild(meta);
-    framesDiv.appendChild(item);
-  });
-  framesDiv.querySelectorAll('.selFrame').forEach(b=>b.onclick = e=>{ activeFrame = parseInt(e.target.dataset.f); renderStage(); });
-  framesDiv.querySelectorAll('.delFrame').forEach(b=>b.onclick = e=>{ const idx=parseInt(e.target.dataset.f); if(frames.length<=1) return alert('لا يمكن حذف آخر إطار'); frames.splice(idx,1); activeFrame = Math.max(0, activeFrame-1); renderStage(); });
-  framesDiv.querySelectorAll('.dupFrame').forEach(b=>b.onclick = e=>{ const idx=parseInt(e.target.dataset.f); const copy = frames[idx].map(a=> new Uint8ClampedArray(a)); frames.splice(idx+1,0, copy ); renderStage(); });
-  highlightActive();
+/* تحديث مصغرات الإطارات والطبقات دوريًا */
+function updateAllThumbs(){
+  state.layers.forEach((l, idx)=> updateLayerThumb(idx));
+  state.frames.forEach((f, idx)=> updateFrameThumb(idx));
 }
 
-function highlightActive(){
-  // وضع حد على الطبقة النشطة
-  layers.forEach((c,idx)=> c.style.outline = idx===activeLayer ? '2px solid rgba(6,182,212,0.6)' : '');
-  // إبراز فريم
-  Array.from(framesDiv.children).forEach((el,idx)=> el.style.outline = idx===activeFrame ? '2px solid rgba(99,102,241,0.6)' : '');
+/* ---------------------------
+   إشعارات خفيفة
+   --------------------------- */
+function showToast(text, type='info', duration=2200) {
+  const el = document.createElement('div');
+  el.className = 'toast ' + (type==='success' ? 'success' : (type==='error' ? 'error' : ''));
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(()=> { el.style.opacity = '0'; setTimeout(()=> el.remove(),300); }, duration);
 }
 
-/* ======= تعديل الحجم (resize) ======= */
-function resizeCanvas(newW,newH){
-  const oldW=W, oldH=H; const oldFrames = frames; W=newW; H=newH;
-  // إعادة تحجيم كل فريم وطبقة (نحافظ على البيانات في الركن الأعلى الأيسر)
-  frames = oldFrames.map(frameLayers => frameLayers.map(arr => {
-    const newArr = new Uint8ClampedArray(W*H*4);
-    for(let y=0;y<Math.min(oldH,H);y++) for(let x=0;x<Math.min(oldW,W);x++){
-      const sIdx=(y*oldW + x)*4; const dIdx=(y*W + x)*4;
-      newArr[dIdx]=arr[sIdx]; newArr[dIdx+1]=arr[sIdx+1]; newArr[dIdx+2]=arr[sIdx+2]; newArr[dIdx+3]=arr[sIdx+3];
-    }
-    return newArr;
-  }));
-  activeLayer = Math.min(activeLayer, frames[activeFrame].length-1);
-  renderStage();
+/* ---------------------------
+   تهيئة المشروع عند الفتح
+   --------------------------- */
+function init() {
+  // إنشاء إطار وطبقة افتراضية
+  state.layers = [ createLayerCanvas('Layer 1') ];
+  state.frames = [{ layersData: [ null ] }];
+  state.currentFrame = 0;
+  state.currentLayer = 0;
+  refreshStageDom();
+  refreshLayerList();
+  refreshFrameList();
+  attachPointerEvents();
+  pushUndo();
+  updateUndoRedoButtons();
+  showToast('جاهز — ابدأ الرسم!', 'success');
 }
 
-/* ======= حفظ و تحميل المشروع (JSON) ======= */
-function saveProject(){
-  const project = {W,H, frames: frames.map(f => f.map(a=> Array.from(a))) };
-  const blob = new Blob([JSON.stringify(project)],{type:'application/json'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'pixel-project.json'; a.click();
-}
-function loadProject(file){
-  const reader = new FileReader(); reader.onload = ()=>{
-    const project = JSON.parse(reader.result);
-    W = project.W; H = project.H; frames = project.frames.map(f=> f.map(arr=> new Uint8ClampedArray(arr)));
-    activeFrame = 0; activeLayer = 0; renderStage();
-  }; reader.readAsText(file);
-}
-
-/* ======= التصدير: PNG للكانفاس الحالي ======= */
-function exportPNG(){
-  // دمج كل الطبقات لكانفاس مؤقت
-  const tmp = document.createElement('canvas'); tmp.width = W; tmp.height = H; const tctx = tmp.getContext('2d'); tctx.imageSmoothingEnabled=false;
-  const merged = mergeVisibleLayers(); tctx.putImageData(new ImageData(merged,W,H),0,0);
-  const a = document.createElement('a'); a.href = tmp.toDataURL('image/png'); a.download='pixel.png'; a.click();
-}
-
-/* ======= تصدير Spritesheet ======= */
-function exportSpritesheet(){
-  const framesCount = frames.length;
-  const tmp = document.createElement('canvas'); tmp.width = W * framesCount; tmp.height = H; const tctx = tmp.getContext('2d'); tctx.imageSmoothingEnabled=false;
-  frames.forEach((frameLayers, idx)=>{
-    // دمج كل طبقات الفريم
-    const merged = new Uint8ClampedArray(W*H*4);
-    frameLayers.forEach(layerArr=>{ for(let i=0;i<layerArr.length;i+=4){ if(layerArr[i+3]===0) continue; merged[i]=layerArr[i]; merged[i+1]=layerArr[i+1]; merged[i+2]=layerArr[i+2]; merged[i+3]=layerArr[i+3]; }});
-    tctx.putImageData(new ImageData(merged, W, H), idx*W, 0);
-  });
-  const a = document.createElement('a'); a.href = tmp.toDataURL('image/png'); a.download='spritesheet.png'; a.click();
-}
-
-/* ======= تنزيل إطارات فردية كصور داخل ZIP (بدون مكتبة خارجية نجمّع كـ روابط متعددة) ======= */
-function exportFramesAsZipLike(){
-  // نصدر كل إطار كصورة منفصلة تلقائياً (سيتم تنزيلهم واحدا تلو الآخر)
-  frames.forEach((f,idx)=>{
-    const tmp = document.createElement('canvas'); tmp.width=W; tmp.height=H; const tctx = tmp.getContext('2d'); tctx.imageSmoothingEnabled=false;
-    const merged = new Uint8ClampedArray(W*H*4);
-    f.forEach(layerArr=>{ for(let i=0;i<layerArr.length;i+=4){ if(layerArr[i+3]===0) continue; merged[i]=layerArr[i]; merged[i+1]=layerArr[i+1]; merged[i+2]=layerArr[i+2]; merged[i+3]=layerArr[i+3]; }});
-    tctx.putImageData(new ImageData(merged,W,H),0,0);
-    const a = document.createElement('a'); a.href = tmp.toDataURL('image/png'); a.download = `frame_${idx+1}.png`; a.click();
-  });
-}
-
-/* ======= تشغيل المعاينة (Animation Preview) ======= */
-function playAnimation(){
-  if(playing) return; playing=true; const fps = Math.max(1, parseInt(document.getElementById('fps').value)||8); let i=0; playInterval = setInterval(()=>{ activeFrame = i; renderStage(); i=(i+1)%frames.length; }, 1000/fps); }
-function stopAnimation(){ playing=false; clearInterval(playInterval); }
-
-/* ======= مساعدة تحويل RGB->HEX ======= */
-function componentToHex(c){ return c.toString(16).padStart(2,'0'); }
-function rgbToHex(r,g,b){ return '#'+componentToHex(r)+componentToHex(g)+componentToHex(b); }
-
-/* ======= أحداث الواجهة ======= */
-// أدوات
-document.querySelectorAll('.tool').forEach(el=> el.onclick = e=>{ tool = el.dataset.tool; activeToolLabel.textContent = ({pen:'قلم',eraser:'ممحاة',fill:'دلو',picker:'قطارة',line:'خط',rect:'مستطيل',circle:'دائرة',move:'تحريك'})[tool] || tool; });
-// لون
-document.getElementById('colorPicker').oninput = e=>{ color = e.target.value; colorLabel.textContent = color; };
-// مقياس
-document.getElementById('previewScale').onchange = e=>{ scale = parseInt(e.target.value); document.querySelectorAll('canvas').forEach(c=>{ c.style.width = (W*scale)+'px'; c.style.height = (H*scale)+'px'; }); scaleLabel.textContent = scale+'x'; };
-// فرشاة
-document.getElementById('brushSize').onchange = e=> brush = Math.max(1, parseInt(e.target.value));
-// أزرار المشروع
-document.getElementById('newBtn').onclick = ()=>{ const w = parseInt(prompt('عرض اللوحة pixels','32')) || 32; const h = parseInt(prompt('ارتفاع اللوحة pixels','32')) || 32; newProject(w,h); };
-document.getElementById('addLayerBtn').onclick = ()=>{ // أضف طبقة فارغة إلى الفريم الحالي
-  const arr = new Uint8ClampedArray(W*H*4); for(let i=0;i<arr.length;i+=4) arr[i+3]=0; frames[activeFrame].push(arr); renderStage(); };
-document.getElementById('removeLayerBtn').onclick = ()=>{ if(frames[activeFrame].length<=1) return alert('لا يمكن حذف آخر طبقة'); frames[activeFrame].splice(activeLayer,1); activeLayer = Math.max(0, activeLayer-1); renderStage(); };
-document.getElementById('addFrameBtn').onclick = ()=>{ // duplicate current frame
-  const copy = frames[activeFrame].map(arr=> new Uint8ClampedArray(arr)); frames.splice(activeFrame+1,0,copy); activeFrame = activeFrame+1; renderStage(); };
-document.getElementById('removeFrameBtn').onclick = ()=>{ if(frames.length<=1) return alert('لا يمكن حذف آخر إطار'); frames.splice(activeFrame,1); activeFrame = Math.max(0, activeFrame-1); renderStage(); };
-document.getElementById('resizeBtn').onclick = ()=>{ const w = Math.max(4, parseInt(document.getElementById('inputW').value)||32); const h = Math.max(4, parseInt(document.getElementById('inputH').value)||32); resizeCanvas(w,h); };
-
-// حفظ و تحميل
-document.getElementById('saveBtn').onclick = ()=> saveProject();
-document.getElementById('loadBtn').onclick = ()=> document.getElementById('fileInput').click();
-document.getElementById('fileInput').addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; loadProject(f); });
-
-// تصدير
-document.getElementById('exportPNG').onclick = ()=> exportPNG();
-document.getElementById('exportSprite').onclick = ()=> exportSpritesheet();
-document.getElementById('exportFramesZip').onclick = ()=> exportFramesAsZipLike();
-
-// انيميشن تشغيل
-document.getElementById('playBtn').onclick = ()=> playAnimation();
-document.getElementById('stopBtn').onclick = ()=> stopAnimation();
-
-// بدأ المشروع افتراضياً
-newProject(W,H);
-updateUILists();
-
-</script></body>
+init();
+</script>
+</body>
 </html>
